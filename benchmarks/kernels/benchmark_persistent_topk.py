@@ -43,6 +43,7 @@ def benchmark(rows: int, width: int, k: int, args) -> dict:
         and rows <= 64
         and capacity % 4 == 0
         and current_platform.has_device_capability(90)
+        and not current_platform.is_device_capability_family(110)
         and not current_platform.is_device_capability_family(120)
     )
     op = torch.ops._C.cooperative_topk if cooperative else torch.ops._C.persistent_topk

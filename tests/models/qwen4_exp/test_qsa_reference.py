@@ -103,6 +103,51 @@ def test_qsa_mtp_index_share_updates_cache_but_skips_selection(
     assert not selections
 
 
+@pytest.mark.parametrize(
+    ("device_family", "expected_op"),
+    [
+        pytest.param(90, "cooperative_topk", id="sm90"),
+        pytest.param(100, "cooperative_topk", id="sm100"),
+        pytest.param(110, "persistent_topk", id="sm110"),
+        pytest.param(120, "persistent_topk", id="sm120"),
+    ],
+)
+def test_qsa_cooperative_topk_architecture_dispatch(
+    monkeypatch: pytest.MonkeyPatch,
+    device_family: int,
+    expected_op: str,
+) -> None:
+    monkeypatch.setattr(
+        qsa_indexer_ops,
+        "current_platform",
+        SimpleNamespace(
+            has_device_capability=lambda _: True,
+            is_device_capability_family=lambda family: family == device_family,
+        ),
+    )
+    selected_ops = []
+    monkeypatch.setattr(
+        qsa_indexer_ops.torch.ops,
+        "_C",
+        SimpleNamespace(
+            cooperative_topk=lambda *args: selected_ops.append("cooperative_topk"),
+            persistent_topk=lambda *args: selected_ops.append("persistent_topk"),
+        ),
+        raising=False,
+    )
+
+    logits = torch.empty((4, 64), dtype=torch.float32)
+    qsa_indexer_ops._topk(
+        logits,
+        torch.empty((4,), dtype=torch.int32),
+        token_topk=4,
+        compress_ratio=1,
+        block_indices=torch.empty((4, 4), dtype=torch.int32),
+        topk_workspace=torch.empty((1,), dtype=torch.uint8),
+    )
+    assert selected_ops == [expected_op]
+
+
 def _qsa_mqa_paged_reference(
     q: torch.Tensor,
     k_cache: torch.Tensor,
