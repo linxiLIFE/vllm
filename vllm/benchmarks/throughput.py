@@ -4,10 +4,12 @@
 
 import argparse
 import json
+import math
 import os
 import random
 import time
 import warnings
+from datetime import datetime
 from typing import Any
 
 import torch
@@ -23,6 +25,22 @@ from vllm.benchmarks.datasets import (
     get_samples,
 )
 from vllm.benchmarks.lib.utils import convert_to_pytorch_benchmark_format, write_to_json
+from vllm.benchmarks.lib.throughput_metrics import (
+    GPU_CSV_FIELDS,
+    HOST_CSV_FIELDS,
+    REQUEST_CSV_FIELDS,
+    REQUEST_METRIC_DEFINITIONS,
+    TOKEN_CSV_FIELDS,
+    ThroughputBenchmarkConfig,
+    ThroughputTelemetrySampler,
+    capture_cuda_memory,
+    capture_environment,
+    collect_output_token_ids,
+    collect_request_metrics,
+    summarize_request_metrics,
+    summarize_values,
+    write_csv,
+)
 from vllm.engine.arg_utils import AsyncEngineArgs, EngineArgs
 from vllm.inputs import TextPrompt, TokensPrompt
 from vllm.lora.request import LoRARequest
@@ -42,10 +60,20 @@ def run_vllm(
     disable_detokenize: bool = False,
     warmup_requests: list[SampleRequest] | None = None,
     prequeue_requests: bool = False,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    ignore_eos: bool = True,
+    telemetry: ThroughputTelemetrySampler | None = None,
+    phase_durations: dict[str, float] | None = None,
 ) -> tuple[float, list[RequestOutput] | None]:
     from vllm import LLM
 
+    if telemetry is not None:
+        telemetry.set_stage("model_load")
+    phase_start = time.perf_counter()
     llm = LLM.from_engine_args(engine_args)
+    if phase_durations is not None:
+        phase_durations["model_load"] = time.perf_counter() - phase_start
     all_requests = list(warmup_requests or []) + requests
     assert all(
         llm.llm_engine.model_config.max_model_len
@@ -58,6 +86,9 @@ def run_vllm(
 
     if warmup_requests:
         print(f"Warming up with {len(warmup_requests)} requests...")
+        if telemetry is not None:
+            telemetry.set_stage("warmup")
+        phase_start = time.perf_counter()
         _run_vllm_requests(
             llm,
             warmup_requests,
@@ -66,8 +97,15 @@ def run_vllm(
             do_profile=False,
             prequeue_requests=prequeue_requests,
             enable_lora=engine_args.enable_lora,
+            temperature=temperature,
+            top_p=top_p,
+            ignore_eos=ignore_eos,
         )
+        if phase_durations is not None:
+            phase_durations["warmup"] = time.perf_counter() - phase_start
 
+    if telemetry is not None:
+        telemetry.set_stage("inference")
     return _run_vllm_requests(
         llm,
         requests,
@@ -76,6 +114,9 @@ def run_vllm(
         do_profile=do_profile,
         prequeue_requests=prequeue_requests,
         enable_lora=engine_args.enable_lora,
+        temperature=temperature,
+        top_p=top_p,
+        ignore_eos=ignore_eos,
     )
 
 
@@ -87,6 +128,9 @@ def _run_vllm_requests(
     do_profile: bool,
     prequeue_requests: bool,
     enable_lora: bool,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    ignore_eos: bool = True,
 ) -> tuple[float, list[RequestOutput] | None]:
     from vllm import SamplingParams
 
@@ -109,9 +153,9 @@ def _run_vllm_requests(
         sampling_params.append(
             SamplingParams(
                 n=n,
-                temperature=1.0,
-                top_p=1.0,
-                ignore_eos=True,
+                temperature=temperature,
+                top_p=top_p,
+                ignore_eos=ignore_eos,
                 max_tokens=request.expected_output_len,
                 detokenize=not disable_detokenize,
             )
@@ -194,6 +238,11 @@ def run_vllm_chat(
     disable_detokenize: bool = False,
     warmup_requests: list[SampleRequest] | None = None,
     prequeue_requests: bool = False,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    ignore_eos: bool = True,
+    telemetry: ThroughputTelemetrySampler | None = None,
+    phase_durations: dict[str, float] | None = None,
 ) -> tuple[float, list[RequestOutput]]:
     """Run vLLM chat benchmark. This function is recommended ONLY for benchmarking
     multimodal models as it properly handles multimodal inputs and chat
@@ -201,7 +250,12 @@ def run_vllm_chat(
     """
     from vllm import LLM
 
+    if telemetry is not None:
+        telemetry.set_stage("model_load")
+    phase_start = time.perf_counter()
     llm = LLM.from_engine_args(engine_args)
+    if phase_durations is not None:
+        phase_durations["model_load"] = time.perf_counter() - phase_start
 
     all_requests = list(warmup_requests or []) + requests
     assert all(
@@ -215,6 +269,9 @@ def run_vllm_chat(
 
     if warmup_requests:
         print(f"Warming up with {len(warmup_requests)} requests...")
+        if telemetry is not None:
+            telemetry.set_stage("warmup")
+        phase_start = time.perf_counter()
         _run_vllm_chat_requests(
             llm,
             warmup_requests,
@@ -222,8 +279,15 @@ def run_vllm_chat(
             disable_detokenize,
             do_profile=False,
             prequeue_requests=prequeue_requests,
+            temperature=temperature,
+            top_p=top_p,
+            ignore_eos=ignore_eos,
         )
+        if phase_durations is not None:
+            phase_durations["warmup"] = time.perf_counter() - phase_start
 
+    if telemetry is not None:
+        telemetry.set_stage("inference")
     return _run_vllm_chat_requests(
         llm,
         requests,
@@ -231,6 +295,9 @@ def run_vllm_chat(
         disable_detokenize,
         do_profile=do_profile,
         prequeue_requests=prequeue_requests,
+        temperature=temperature,
+        top_p=top_p,
+        ignore_eos=ignore_eos,
     )
 
 
@@ -241,6 +308,9 @@ def _run_vllm_chat_requests(
     disable_detokenize: bool,
     do_profile: bool,
     prequeue_requests: bool,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    ignore_eos: bool = True,
 ) -> tuple[float, list[RequestOutput]]:
     from vllm import SamplingParams
 
@@ -265,9 +335,9 @@ def _run_vllm_chat_requests(
         sampling_params.append(
             SamplingParams(
                 n=n,
-                temperature=1.0,
-                top_p=1.0,
-                ignore_eos=True,
+                temperature=temperature,
+                top_p=top_p,
+                ignore_eos=ignore_eos,
                 max_tokens=request.expected_output_len,
                 detokenize=not disable_detokenize,
             )
@@ -287,7 +357,9 @@ def _run_vllm_chat_requests(
             llm.wake_up(tags=["scheduling"])
         outputs = llm.wait_for_completion(output_type=RequestOutput, use_tqdm=True)
     else:
-        outputs = llm.chat(prompts, sampling_params, use_tqdm=True)  # type: ignore[arg-type]
+        outputs = llm.chat(
+            prompts, sampling_params, use_tqdm=True
+        )  # type: ignore[arg-type]
 
     if do_profile:
         llm.stop_profile()
@@ -303,14 +375,24 @@ async def run_vllm_async(
     do_profile: bool,
     disable_detokenize: bool = False,
     warmup_requests: list[SampleRequest] | None = None,
-) -> float:
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    ignore_eos: bool = True,
+    telemetry: ThroughputTelemetrySampler | None = None,
+    phase_durations: dict[str, float] | None = None,
+) -> tuple[float, list[RequestOutput | None]]:
     from vllm.entrypoints.launchers.api_server.entry import (
         build_async_engine_client_from_engine_args,
     )
 
+    if telemetry is not None:
+        telemetry.set_stage("model_load")
+    phase_start = time.perf_counter()
     async with build_async_engine_client_from_engine_args(
         engine_args,
     ) as llm:
+        if phase_durations is not None:
+            phase_durations["model_load"] = time.perf_counter() - phase_start
         model_config = llm.model_config
         all_requests = list(warmup_requests or []) + requests
         assert all(
@@ -324,6 +406,9 @@ async def run_vllm_async(
 
         if warmup_requests:
             print(f"Warming up with {len(warmup_requests)} requests...")
+            if telemetry is not None:
+                telemetry.set_stage("warmup")
+            phase_start = time.perf_counter()
             await _run_vllm_async_requests(
                 llm,
                 warmup_requests,
@@ -331,17 +416,27 @@ async def run_vllm_async(
                 disable_detokenize,
                 do_profile=False,
                 request_id_prefix="warmup",
+                temperature=temperature,
+                top_p=top_p,
+                ignore_eos=ignore_eos,
             )
+            if phase_durations is not None:
+                phase_durations["warmup"] = time.perf_counter() - phase_start
 
-        elapsed_time, _ = await _run_vllm_async_requests(
+        if telemetry is not None:
+            telemetry.set_stage("inference")
+        elapsed_time, request_outputs = await _run_vllm_async_requests(
             llm,
             requests,
             n,
             disable_detokenize,
             do_profile=do_profile,
             request_id_prefix="test",
+            temperature=temperature,
+            top_p=top_p,
+            ignore_eos=ignore_eos,
         )
-        return elapsed_time
+        return elapsed_time, request_outputs
 
 
 async def _run_vllm_async_requests(
@@ -351,7 +446,10 @@ async def _run_vllm_async_requests(
     disable_detokenize: bool,
     do_profile: bool,
     request_id_prefix: str,
-) -> tuple[float, None]:
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    ignore_eos: bool = True,
+) -> tuple[float, list[RequestOutput | None]]:
     from vllm import SamplingParams
 
     prompts: list[TextPrompt | TokensPrompt] = []
@@ -373,9 +471,9 @@ async def _run_vllm_async_requests(
         sampling_params.append(
             SamplingParams(
                 n=n,
-                temperature=1.0,
-                top_p=1.0,
-                ignore_eos=True,
+                temperature=temperature,
+                top_p=top_p,
+                ignore_eos=ignore_eos,
                 max_tokens=request.expected_output_len,
                 detokenize=not disable_detokenize,
             )
@@ -395,12 +493,16 @@ async def _run_vllm_async_requests(
         )
         generators.append(generator)
     all_gens = merge_async_iterators(*generators)
-    async for _i, _res in all_gens:
-        pass
+    outputs_by_index: dict[int, RequestOutput] = {}
+    async for index, output in all_gens:
+        if isinstance(output, RequestOutput):
+            outputs_by_index[index] = output
     if do_profile:
         await llm.stop_profile()
     end = time.perf_counter()
-    return end - start, None
+    return end - start, [
+        outputs_by_index.get(index) for index in range(len(requests))
+    ]
 
 
 def run_hf(
@@ -628,6 +730,18 @@ def assign_loras(requests, args):
 
 def validate_args(args):
     """Validate command-line arguments."""
+    if not math.isfinite(args.temperature) or args.temperature < 0:
+        raise ValueError("--temperature must be non-negative")
+    if not math.isfinite(args.top_p) or not 0.0 < args.top_p <= 1.0:
+        raise ValueError("--top-p must be in the range (0, 1]")
+    if (
+        not math.isfinite(args.telemetry_interval_s)
+        or args.telemetry_interval_s <= 0
+    ):
+        raise ValueError("--telemetry-interval-s must be positive")
+    if args.save_detailed and not args.output_json:
+        raise ValueError("--save-detailed requires --output-json")
+
     # === Deprecation and Defaulting ===
     if args.dataset is not None:
         warnings.warn(
@@ -885,6 +999,40 @@ def add_cli_args(parser: FlexibleArgumentParser):
         help="Path to save the throughput results in JSON format.",
     )
     parser.add_argument(
+        "--save-detailed",
+        action="store_true",
+        help=(
+            "Save per-request metrics and host/GPU telemetry CSV files next "
+            "to --output-json."
+        ),
+    )
+    parser.add_argument(
+        "--telemetry-interval-s",
+        type=float,
+        default=1.0,
+        help="Sampling interval in seconds for detailed host/GPU telemetry.",
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=1.0,
+        help="Sampling temperature for vLLM backends.",
+    )
+    parser.add_argument(
+        "--top-p",
+        type=float,
+        default=1.0,
+        help="Top-p sampling value for vLLM backends.",
+    )
+    parser.add_argument(
+        "--ignore-eos",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Whether vLLM should ignore EOS and generate the requested output length."
+        ),
+    )
+    parser.add_argument(
         "--async-engine",
         action="store_true",
         default=False,
@@ -1021,6 +1169,11 @@ def add_cli_args(parser: FlexibleArgumentParser):
 
 def main(args: argparse.Namespace):
     validate_args(args)
+    if args.save_detailed and args.disable_log_stats:
+        warnings.warn(
+            "Request latency metrics are disabled by --disable-log-stats.",
+            stacklevel=2,
+        )
     if args.seed is None:
         args.seed = 0
     random.seed(args.seed)
@@ -1046,21 +1199,72 @@ def main(args: argparse.Namespace):
 
     requests = get_requests(args, tokenizer)
     is_multi_modal = any(request.multi_modal_data is not None for request in requests)
-    request_outputs: list[RequestOutput] | None = None
-    if args.backend == "vllm":
-        if args.async_engine:
-            elapsed_time = uvloop.run(
-                run_vllm_async(
+    benchmark_config = ThroughputBenchmarkConfig.from_args(args)
+    phase_durations: dict[str, float] = {}
+    telemetry = (
+        ThroughputTelemetrySampler(args.telemetry_interval_s)
+        if args.save_detailed
+        else None
+    )
+    if telemetry is not None:
+        telemetry.start()
+
+    request_outputs: list[Any] | None = None
+    try:
+        if args.backend == "vllm":
+            if args.async_engine:
+                elapsed_time, request_outputs = uvloop.run(
+                    run_vllm_async(
+                        requests,
+                        args.n,
+                        AsyncEngineArgs.from_cli_args(args),
+                        disable_detokenize=args.disable_detokenize,
+                        do_profile=args.profile,
+                        warmup_requests=warmup_requests,
+                        temperature=args.temperature,
+                        top_p=args.top_p,
+                        ignore_eos=args.ignore_eos,
+                        telemetry=telemetry,
+                        phase_durations=phase_durations,
+                    )
+                )
+            else:
+                elapsed_time, request_outputs = run_vllm(
                     requests,
                     args.n,
-                    AsyncEngineArgs.from_cli_args(args),
+                    EngineArgs.from_cli_args(args),
                     disable_detokenize=args.disable_detokenize,
                     do_profile=args.profile,
                     warmup_requests=warmup_requests,
+                    prequeue_requests=args.prequeue_requests,
+                    temperature=args.temperature,
+                    top_p=args.top_p,
+                    ignore_eos=args.ignore_eos,
+                    telemetry=telemetry,
+                    phase_durations=phase_durations,
                 )
+        elif args.backend == "hf":
+            assert args.tensor_parallel_size == 1
+            if args.profile:
+                raise NotImplementedError(
+                    "Profiling not implemented yet for backend='hf'."
+                )
+            if telemetry is not None:
+                telemetry.set_stage("backend_run")
+            elapsed_time = run_hf(
+                requests,
+                args.model,
+                tokenizer,
+                args.n,
+                args.hf_max_batch_size,
+                args.trust_remote_code,
+                disable_detokenize=args.disable_detokenize,
+                dtype=args.dtype,
+                enable_torch_compile=args.hf_enable_torch_compile,
+                warmup_requests=warmup_requests,
             )
-        else:
-            elapsed_time, request_outputs = run_vllm(
+        elif args.backend == "vllm-chat":
+            elapsed_time, request_outputs = run_vllm_chat(
                 requests,
                 args.n,
                 EngineArgs.from_cli_args(args),
@@ -1068,36 +1272,19 @@ def main(args: argparse.Namespace):
                 do_profile=args.profile,
                 warmup_requests=warmup_requests,
                 prequeue_requests=args.prequeue_requests,
+                temperature=args.temperature,
+                top_p=args.top_p,
+                ignore_eos=args.ignore_eos,
+                telemetry=telemetry,
+                phase_durations=phase_durations,
             )
-    elif args.backend == "hf":
-        assert args.tensor_parallel_size == 1
-        if args.profile:
-            raise NotImplementedError("Profiling not implemented yet for backend='hf'.")
-        elapsed_time = run_hf(
-            requests,
-            args.model,
-            tokenizer,
-            args.n,
-            args.hf_max_batch_size,
-            args.trust_remote_code,
-            args.disable_detokenize,
-            dtype=args.dtype,
-            enable_torch_compile=args.hf_enable_torch_compile,
-            warmup_requests=warmup_requests,
-        )
-    elif args.backend == "vllm-chat":
-        elapsed_time, request_outputs = run_vllm_chat(
-            requests,
-            args.n,
-            EngineArgs.from_cli_args(args),
-            disable_detokenize=args.disable_detokenize,
-            do_profile=args.profile,
-            warmup_requests=warmup_requests,
-            prequeue_requests=args.prequeue_requests,
-        )
-    else:
-        raise ValueError(f"Unknown backend: {args.backend}")
+        else:
+            raise ValueError(f"Unknown backend: {args.backend}")
+    finally:
+        if telemetry is not None:
+            telemetry.stop()
 
+    phase_durations["inference"] = elapsed_time
     if request_outputs:
         # Note: with the vllm and vllm-chat backends,
         # we have request_outputs, which we use to count tokens.
@@ -1137,17 +1324,103 @@ def main(args: argparse.Namespace):
     )
     print(f"Total num prompt tokens:  {total_prompt_tokens}")
     print(f"Total num output tokens:  {total_output_tokens}")
+    prompt_tokens_per_second = total_prompt_tokens / elapsed_time
+    output_tokens_per_second = total_output_tokens / elapsed_time
+    request_records = collect_request_metrics(
+        requests, request_outputs
+    )
+    request_metric_summary = summarize_request_metrics(request_records)
+    request_length_summary = {
+        metric: summarize_values([record[field] for record in request_records])
+        for metric, field in (
+            ("input_tokens", "input_tokens"),
+            ("requested_output_tokens", "requested_output_tokens"),
+            ("actual_output_tokens", "actual_output_tokens"),
+        )
+    }
+    for metric_name, label in (
+        ("ttft_s", "TTFT"),
+        ("e2e_latency_s", "E2E latency"),
+        ("mean_tpot_s", "Mean TPOT"),
+    ):
+        metric = request_metric_summary[metric_name]
+        if metric["count"]:
+            print(
+                f"{label}: mean={metric['mean'] * 1000:.2f} ms, "
+                f"p50={metric['p50'] * 1000:.2f} ms, "
+                f"p95={metric['p95'] * 1000:.2f} ms, "
+                f"p99={metric['p99'] * 1000:.2f} ms"
+            )
 
     # Output JSON results if specified
     if args.output_json:
         results = {
-            "model_id": args.model,
+            "result_schema_version": 1,
+            "run_id": benchmark_config.run_id,
+            "status": "completed",
+            "started_at": benchmark_config.started_at,
+            "finished_at": datetime.now().astimezone().isoformat(
+                timespec="milliseconds"
+            ),
             "elapsed_time": elapsed_time,
             "num_requests": len(requests),
+            "total_prompt_tokens": total_prompt_tokens,
+            "total_output_tokens": total_output_tokens,
             "total_num_tokens": total_num_tokens,
             "requests_per_second": len(requests) / elapsed_time,
+            "prompt_tokens_per_second": prompt_tokens_per_second,
+            "output_tokens_per_second": output_tokens_per_second,
             "tokens_per_second": total_num_tokens / elapsed_time,
+            "completed_output_records": sum(
+                isinstance(output, RequestOutput)
+                for output in request_outputs or []
+            ),
+            "token_counts_are_actual": (
+                request_outputs is not None
+                and all(
+                    isinstance(output, RequestOutput) for output in request_outputs
+                )
+            ),
+            "request_metrics": request_metric_summary,
+            "request_length_summary": request_length_summary,
+            "request_metric_definitions": REQUEST_METRIC_DEFINITIONS,
+            "phase_durations_s": phase_durations,
+            "cuda_memory": capture_cuda_memory(torch),
+            "telemetry": telemetry.summarize() if telemetry is not None else None,
+            "config": benchmark_config.to_dict(),
+            "environment": capture_environment(torch),
         }
+        if args.save_detailed:
+            output_stem, _ = os.path.splitext(args.output_json)
+            artifacts = {
+                "requests_csv": f"{output_stem}_requests.csv",
+                "output_tokens_csv": f"{output_stem}_tokens.csv",
+                "host_telemetry_csv": f"{output_stem}_host.csv",
+                "gpu_telemetry_csv": f"{output_stem}_gpu.csv",
+            }
+            write_csv(
+                artifacts["requests_csv"], REQUEST_CSV_FIELDS, request_records
+            )
+            assert telemetry is not None
+            write_csv(
+                artifacts["host_telemetry_csv"],
+                HOST_CSV_FIELDS,
+                telemetry.host_rows,
+            )
+            write_csv(
+                artifacts["gpu_telemetry_csv"],
+                GPU_CSV_FIELDS,
+                telemetry.gpu_rows,
+            )
+            write_csv(
+                artifacts["output_tokens_csv"],
+                TOKEN_CSV_FIELDS,
+                collect_output_token_ids(request_outputs),
+            )
+            results["artifacts"] = artifacts
+
+        output_directory = os.path.dirname(os.path.abspath(args.output_json))
+        os.makedirs(output_directory, exist_ok=True)
         with open(args.output_json, "w") as f:
-            json.dump(results, f, indent=4)
+            json.dump(results, f, indent=4, allow_nan=False)
         save_to_pytorch_benchmark_format(args, results)
