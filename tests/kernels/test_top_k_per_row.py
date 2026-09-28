@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 import torch
@@ -20,6 +22,14 @@ RADIX_TOPK_WORKSPACE_SIZE = 1024 * 1024
 
 def _has_device_capability(major: int) -> bool:
     return current_platform.is_cuda() and current_platform.has_device_capability(major)
+
+
+def _has_cooperative_topk() -> bool:
+    return (
+        _has_device_capability(90)
+        and not current_platform.is_device_capability_family(110)
+        and not current_platform.is_device_capability_family(120)
+    )
 
 
 def _on_gfx950() -> bool:
@@ -43,8 +53,8 @@ requires_gfx950 = pytest.mark.skipif(
 COOPERATIVE_TOPK_BACKEND = pytest.param(
     "cooperative_topk",
     marks=pytest.mark.skipif(
-        not _has_device_capability(90),
-        reason="cooperative_topk requires SM90+",
+        not _has_cooperative_topk(),
+        reason="cooperative_topk requires SM90+ and excludes SM11x/SM12x",
     ),
 )
 WORKSPACE_TOPK_BACKENDS = ["persistent_topk", COOPERATIVE_TOPK_BACKEND]
@@ -1392,7 +1402,10 @@ def test_deepseek_topk_backends_no_error_and_reference(
     )
 
 
-@pytest.mark.skipif(not _has_device_capability(90), reason="This test requires SM90+")
+@pytest.mark.skipif(
+    not _has_cooperative_topk(),
+    reason="cooperative_topk requires SM90+ and excludes SM11x/SM12x",
+)
 @torch.inference_mode()
 def test_cooperative_topk_512_tie_workspace_is_per_row() -> None:
     """Regression test for TopK=512 tie workspace row overlap."""
@@ -1695,12 +1708,6 @@ def _has_flashinfer_topk() -> bool:
     return importlib.util.find_spec("flashinfer") is not None
 
 
-def _has_cooperative_topk() -> bool:
-    return _has_device_capability(
-        90
-    ) and not current_platform.is_device_capability_family(120)
-
-
 SPARSE_INDEXER_EXPLICIT_BACKENDS = [
     pytest.param(
         "per_row",
@@ -1719,7 +1726,7 @@ SPARSE_INDEXER_EXPLICIT_BACKENDS = [
         "cooperative",
         marks=pytest.mark.skipif(
             not _has_cooperative_topk(),
-            reason="cooperative_topk requires SM90+ (non-SM12x)",
+            reason="cooperative_topk requires SM90+ and excludes SM11x/SM12x",
         ),
     ),
     pytest.param(
@@ -1840,6 +1847,40 @@ def test_sparse_indexer_decode_topk_short_seq_lens(
             ref = logits[row, :end].topk(k_i).indices.sort().values
             got = indices[row, :k_i].sort().values
             assert torch.equal(got, ref), f"{backend}: row {row}"
+
+
+@pytest.mark.parametrize(
+    ("device_family", "expected_backend"),
+    [
+        pytest.param(90, "cooperative", id="sm90"),
+        pytest.param(100, "cooperative", id="sm100"),
+        pytest.param(110, "persistent", id="sm110"),
+        pytest.param(120, "persistent", id="sm120"),
+    ],
+)
+def test_sparse_indexer_topk_architecture_dispatch(
+    monkeypatch: pytest.MonkeyPatch,
+    device_family: int,
+    expected_backend: str,
+) -> None:
+    from vllm.model_executor.layers import indexer_topk
+
+    mocked_platform = SimpleNamespace(
+        is_cuda=lambda: True,
+        has_device_capability=lambda _: True,
+        is_device_capability_family=lambda family: family == device_family,
+    )
+    monkeypatch.setattr(indexer_topk, "current_platform", mocked_platform)
+    monkeypatch.setattr(indexer_topk, "has_flashinfer", lambda: False)
+
+    logits = torch.empty((4, 64), dtype=torch.float32)
+    dispatcher = indexer_topk.SparseIndexerTopk("auto")
+    assert dispatcher.resolve_backend(logits, 512, 4) == expected_backend
+
+    if device_family in (110, 120):
+        explicit_dispatcher = indexer_topk.SparseIndexerTopk("cooperative")
+        with pytest.raises(RuntimeError, match="SM11x/SM12x"):
+            explicit_dispatcher.resolve_backend(logits, 512, 4)
 
 
 @pytest.mark.skipif(not current_platform.is_cuda(), reason="requires CUDA")

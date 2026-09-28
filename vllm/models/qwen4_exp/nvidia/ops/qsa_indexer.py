@@ -473,6 +473,16 @@ def expand_qsa_block_indices(
     )
 
 
+def _can_use_cooperative_topk(logits: torch.Tensor) -> bool:
+    return (
+        logits.shape[0] <= 64
+        and logits.stride(0) % 4 == 0
+        and current_platform.has_device_capability(90)
+        and not current_platform.is_device_capability_family(110)
+        and not current_platform.is_device_capability_family(120)
+    )
+
+
 def _topk(
     logits: torch.Tensor,
     visible_blocks: torch.Tensor,
@@ -483,15 +493,9 @@ def _topk(
 ) -> None:
     # similar dispatch logic as DeepSeek indexer
     block_topk = token_topk // compress_ratio
-    use_cooperative_topk = (
-        logits.shape[0] <= 64
-        and logits.stride(0) % 4 == 0
-        and current_platform.has_device_capability(90)
-        and not current_platform.is_device_capability_family(120)
-    )
     topk_op = (
         torch.ops._C.cooperative_topk
-        if use_cooperative_topk
+        if _can_use_cooperative_topk(logits)
         else torch.ops._C.persistent_topk
     )
     topk_op(
