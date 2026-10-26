@@ -1,0 +1,50 @@
+[
+  {
+    "layer": "qkv_proj",
+    "M": 16,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.0713300704956055,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.002142660140991211,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 32,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.00037447779322974384,
+    "max_abs_error": 0.00390625,
+    "output_rms": 1.0713300704956055,
+    "max_error_over_rms": 0.0036461685409361643,
+    "elementwise_atol": 0.002142660140991211,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 16,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.0713300704956055,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.002142660140991211,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 32,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.00037447779322974384,
+    "max_abs_error": 0.00390625,
+    "output_rms": 1.0713300704956055,
+    "max_error_over_rms": 0.0036461685409361643,
+    "elementwise_atol": 0.002142660140991211,
+    "original_elementwise_tolerance_passed": true
+  }
+]

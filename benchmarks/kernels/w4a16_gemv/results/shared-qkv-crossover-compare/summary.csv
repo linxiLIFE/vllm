@@ -1,0 +1,129 @@
+M,cache,custom_us,humming_us,source
+1,cold,8.767000000000001,9.8875,shared-qkv-reuse-compare (see M1 repeat in its report)
+2,cold,8.895999999999999,9.535,shared-qkv-reuse-compare (see M1 repeat in its report)
+3,cold,9.023,9.512,shared-qkv-reuse-compare (see M1 repeat in its report)
+4,cold,9.0,9.546000000000001,shared-qkv-reuse-compare (see M1 repeat in its report)
+5,cold,9.023,9.568,shared-qkv-reuse-compare (see M1 repeat in its report)
+6,cold,9.216000000000001,9.545,shared-qkv-reuse-compare (see M1 repeat in its report)
+7,cold,9.1935,9.665999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+8,cold,9.186,9.674999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+9,cold,9.854999999999999,11.304,shared-qkv-reuse-compare (see M1 repeat in its report)
+10,cold,10.131,11.327,shared-qkv-reuse-compare (see M1 repeat in its report)
+11,cold,10.111,11.292,shared-qkv-reuse-compare (see M1 repeat in its report)
+12,cold,10.302,11.295,shared-qkv-reuse-compare (see M1 repeat in its report)
+13,cold,10.4635,11.391,shared-qkv-reuse-compare (see M1 repeat in its report)
+14,cold,10.496,11.359,shared-qkv-reuse-compare (see M1 repeat in its report)
+15,cold,10.461,11.39,shared-qkv-reuse-compare (see M1 repeat in its report)
+16,cold,10.525,11.359,shared-qkv-reuse-compare (see M1 repeat in its report)
+17,cold,13.020999999999999,15.831999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+18,cold,13.151,15.871,shared-qkv-reuse-compare (see M1 repeat in its report)
+19,cold,13.056,15.903,shared-qkv-reuse-compare (see M1 repeat in its report)
+20,cold,13.181999999999999,15.903,shared-qkv-reuse-compare (see M1 repeat in its report)
+21,cold,13.215,15.933,shared-qkv-reuse-compare (see M1 repeat in its report)
+22,cold,13.374,15.966999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+23,cold,13.205,16.031,shared-qkv-reuse-compare (see M1 repeat in its report)
+24,cold,13.215,15.998999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+25,cold,13.315000000000001,16.031,shared-qkv-reuse-compare (see M1 repeat in its report)
+26,cold,13.407,16.034,shared-qkv-reuse-compare (see M1 repeat in its report)
+27,cold,13.453,16.0985,shared-qkv-reuse-compare (see M1 repeat in its report)
+28,cold,13.631,16.095000000000002,shared-qkv-reuse-compare (see M1 repeat in its report)
+29,cold,13.7255,16.179,shared-qkv-reuse-compare (see M1 repeat in its report)
+30,cold,13.8015,16.177,shared-qkv-reuse-compare (see M1 repeat in its report)
+31,cold,13.981,16.254,shared-qkv-reuse-compare (see M1 repeat in its report)
+32,cold,14.495,16.315,shared-qkv-reuse-compare (see M1 repeat in its report)
+1,warm,5.44,7.071,shared-qkv-reuse-compare (see M1 repeat in its report)
+2,warm,6.015000000000001,7.135,shared-qkv-reuse-compare (see M1 repeat in its report)
+3,warm,6.111,7.071,shared-qkv-reuse-compare (see M1 repeat in its report)
+4,warm,6.047000000000001,7.104,shared-qkv-reuse-compare (see M1 repeat in its report)
+5,warm,6.176,7.167,shared-qkv-reuse-compare (see M1 repeat in its report)
+6,warm,6.335999999999999,7.135,shared-qkv-reuse-compare (see M1 repeat in its report)
+7,warm,6.401,7.139,shared-qkv-reuse-compare (see M1 repeat in its report)
+8,warm,6.368,7.136,shared-qkv-reuse-compare (see M1 repeat in its report)
+9,warm,8.255,9.771,shared-qkv-reuse-compare (see M1 repeat in its report)
+10,warm,8.477,9.790999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+11,warm,8.572,9.826,shared-qkv-reuse-compare (see M1 repeat in its report)
+12,warm,8.81,9.790999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+13,warm,8.604000000000001,9.823,shared-qkv-reuse-compare (see M1 repeat in its report)
+14,warm,8.859,9.853000000000002,shared-qkv-reuse-compare (see M1 repeat in its report)
+15,warm,8.927,9.951,shared-qkv-reuse-compare (see M1 repeat in its report)
+16,warm,8.891,9.915999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+17,warm,11.707,13.533999999999999,shared-qkv-reuse-compare (see M1 repeat in its report)
+18,warm,11.710999999999999,13.535,shared-qkv-reuse-compare (see M1 repeat in its report)
+19,warm,11.8065,13.568,shared-qkv-reuse-compare (see M1 repeat in its report)
+20,warm,11.838,13.566,shared-qkv-reuse-compare (see M1 repeat in its report)
+21,warm,11.807,13.628,shared-qkv-reuse-compare (see M1 repeat in its report)
+22,warm,11.872,13.663,shared-qkv-reuse-compare (see M1 repeat in its report)
+23,warm,12.118500000000001,13.663,shared-qkv-reuse-compare (see M1 repeat in its report)
+24,warm,11.959,13.663,shared-qkv-reuse-compare (see M1 repeat in its report)
+25,warm,11.934000000000001,13.695,shared-qkv-reuse-compare (see M1 repeat in its report)
+26,warm,12.387,13.699,shared-qkv-reuse-compare (see M1 repeat in its report)
+27,warm,12.291,13.731,shared-qkv-reuse-compare (see M1 repeat in its report)
+28,warm,12.415000000000001,13.7845,shared-qkv-reuse-compare (see M1 repeat in its report)
+29,warm,12.667,13.796,shared-qkv-reuse-compare (see M1 repeat in its report)
+30,warm,12.626999999999999,13.796,shared-qkv-reuse-compare (see M1 repeat in its report)
+31,warm,12.991000000000001,13.887,shared-qkv-reuse-compare (see M1 repeat in its report)
+32,warm,13.603,13.918,shared-qkv-reuse-compare (see M1 repeat in its report)
+33,cold,17.885,24.1695,shared-qkv-crossover-compare
+33,warm,16.977,21.18,shared-qkv-crossover-compare
+34,cold,18.6385,23.485,shared-qkv-crossover-compare
+34,warm,17.888,21.214,shared-qkv-crossover-compare
+35,cold,18.543,23.485,shared-qkv-crossover-compare
+35,warm,17.981,21.279,shared-qkv-crossover-compare
+36,cold,18.7035,23.454,shared-qkv-crossover-compare
+36,warm,17.63,21.246000000000002,shared-qkv-crossover-compare
+37,cold,18.974,23.55,shared-qkv-crossover-compare
+37,warm,18.303,21.31,shared-qkv-crossover-compare
+38,cold,18.743000000000002,23.517,shared-qkv-crossover-compare
+38,warm,17.464,21.342,shared-qkv-crossover-compare
+39,cold,19.262,23.581999999999997,shared-qkv-crossover-compare
+39,warm,18.043,21.374000000000002,shared-qkv-crossover-compare
+40,cold,19.77,23.581999999999997,shared-qkv-crossover-compare
+40,warm,18.846,21.374000000000002,shared-qkv-crossover-compare
+41,cold,20.029999999999998,23.359,shared-qkv-crossover-compare
+41,warm,18.934,21.198999999999998,shared-qkv-crossover-compare
+42,cold,19.9595,23.386,shared-qkv-crossover-compare
+42,warm,18.968,21.217,shared-qkv-crossover-compare
+43,cold,19.807000000000002,23.374000000000002,shared-qkv-crossover-compare
+43,warm,18.9455,21.279,shared-qkv-crossover-compare
+44,cold,19.967,23.391,shared-qkv-crossover-compare
+44,warm,19.102,21.340999999999998,shared-qkv-crossover-compare
+45,cold,20.244999999999997,23.490000000000002,shared-qkv-crossover-compare
+45,warm,19.14,21.34,shared-qkv-crossover-compare
+46,cold,20.453,23.486,shared-qkv-crossover-compare
+46,warm,19.779999999999998,21.406000000000002,shared-qkv-crossover-compare
+47,cold,20.798000000000002,23.5,shared-qkv-crossover-compare
+47,warm,19.908,21.446,shared-qkv-crossover-compare
+48,cold,21.064,23.709999999999997,shared-qkv-crossover-boundary
+48,warm,19.951,21.712,shared-qkv-crossover-boundary
+49,cold,26.9895,25.508,shared-qkv-crossover-boundary
+49,warm,25.598,23.327,shared-qkv-crossover-boundary
+50,cold,27.197,25.566,shared-qkv-crossover-boundary
+50,warm,25.502,23.262999999999998,shared-qkv-crossover-boundary
+51,cold,26.462,25.405,shared-qkv-crossover-boundary
+51,warm,24.978,23.199,shared-qkv-crossover-boundary
+52,cold,26.916,25.369,shared-qkv-crossover-compare
+52,warm,25.565,23.168000000000003,shared-qkv-crossover-compare
+53,cold,27.357,25.34,shared-qkv-crossover-compare
+53,warm,25.919,23.172,shared-qkv-crossover-compare
+54,cold,27.945,25.378,shared-qkv-crossover-compare
+54,warm,26.7885,23.261,shared-qkv-crossover-compare
+55,cold,27.359,25.533500000000004,shared-qkv-crossover-compare
+55,warm,26.0775,23.4225,shared-qkv-crossover-compare
+56,cold,26.996,25.503,shared-qkv-crossover-compare
+56,warm,25.6615,23.326,shared-qkv-crossover-compare
+57,cold,28.415,25.587,shared-qkv-crossover-compare
+57,warm,27.07,23.33,shared-qkv-crossover-compare
+58,cold,27.645,25.565,shared-qkv-crossover-compare
+58,warm,26.237,23.361,shared-qkv-crossover-compare
+59,cold,28.671,25.63,shared-qkv-crossover-compare
+59,warm,27.259999999999998,23.391,shared-qkv-crossover-compare
+60,cold,28.089,25.567,shared-qkv-crossover-compare
+60,warm,26.893,23.387999999999998,shared-qkv-crossover-compare
+61,cold,29.179,25.599,shared-qkv-crossover-compare
+61,warm,27.678,23.294,shared-qkv-crossover-compare
+62,cold,29.4015,25.579,shared-qkv-crossover-compare
+62,warm,28.032,23.326,shared-qkv-crossover-compare
+63,cold,29.437,25.652,shared-qkv-crossover-compare
+63,warm,27.920499999999997,23.358,shared-qkv-crossover-compare
+64,cold,29.596999999999998,25.662,shared-qkv-crossover-compare
+64,warm,28.285999999999998,23.389,shared-qkv-crossover-compare

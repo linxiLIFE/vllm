@@ -1,0 +1,18 @@
+{
+  "qkv_proj/M9": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M16": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M17": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M32": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  }
+}

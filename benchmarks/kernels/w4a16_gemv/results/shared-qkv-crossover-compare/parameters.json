@@ -1,0 +1,18 @@
+[
+  {
+    "layer": "qkv_proj",
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "weight_shape": [
+      96,
+      4096
+    ],
+    "scale_shape": [
+      12,
+      2048
+    ],
+    "bytes": 1622016,
+    "layouts": 1,
+    "reference_device": "cpu"
+  }
+]

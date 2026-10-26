@@ -1,0 +1,7 @@
+layer,M,K,N,cache,family,impl,median_us,round0_us,round1_us,effective_gbps
+qkv_proj,1,1536,2048,cold,humming,humming_default,50.0115,90.16799999999999,11.679,32.576187476880314
+qkv_proj,1,1536,2048,cold,humming,humming_no_streamk,9.8875,10.078999999999999,9.623,164.77208596713024
+qkv_proj,1,1536,2048,cold,custom,shareds4_t2_n1_k8_c0,8.767000000000001,8.831999999999999,8.6555,185.83141325424884
+qkv_proj,1,1536,2048,warm,humming,humming_default,8.639000000000001,8.671,8.576,188.58478990623914
+qkv_proj,1,1536,2048,warm,humming,humming_no_streamk,7.071,7.103,7.04,230.4036204214397
+qkv_proj,1,1536,2048,warm,custom,shareds4_t2_n1_k8_c0,5.44,5.44,5.44,299.48235294117643

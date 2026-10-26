@@ -1,0 +1,50 @@
+[
+  {
+    "layer": "o_proj",
+    "weight_ptr": 38696517632,
+    "scale_ptr": 38757615616,
+    "weight_shape": [
+      96,
+      3072
+    ],
+    "scale_shape": [
+      12,
+      1536
+    ],
+    "bytes": 1216512,
+    "layouts": 1,
+    "reference_device": "cpu"
+  },
+  {
+    "layer": "gate_up_proj",
+    "weight_ptr": 38969278464,
+    "scale_ptr": 38757652480,
+    "weight_shape": [
+      96,
+      35840
+    ],
+    "scale_shape": [
+      12,
+      17920
+    ],
+    "bytes": 14192640,
+    "layouts": 1,
+    "reference_device": "cpu"
+  },
+  {
+    "layer": "down_proj",
+    "weight_ptr": 38990839808,
+    "scale_ptr": 38758942720,
+    "weight_shape": [
+      560,
+      3072
+    ],
+    "scale_shape": [
+      70,
+      1536
+    ],
+    "bytes": 7096320,
+    "layouts": 1,
+    "reference_device": "cpu"
+  }
+]

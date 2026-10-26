@@ -1,0 +1,130 @@
+{
+  "qkv_proj/M33": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M34": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M35": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M36": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M37": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M38": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M39": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M40": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M41": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M42": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M43": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M44": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M45": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M46": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M47": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M48": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M49": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M50": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M51": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M52": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M53": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M54": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M55": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M56": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M57": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M58": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M59": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M60": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M61": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M62": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M63": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M64": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  }
+}

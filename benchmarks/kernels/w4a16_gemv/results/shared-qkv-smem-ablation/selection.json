@@ -1,0 +1,34 @@
+{
+  "qkv_proj/M1": {
+    "custom": "reserved_t2_k8_s4",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M2": {
+    "custom": "reserved_t2_k8_s4",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M3": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M4": {
+    "custom": "sharedv_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M5": {
+    "custom": "sharedv_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M6": {
+    "custom": "reserved_t2_k16_s8",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M7": {
+    "custom": "sharedv_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "qkv_proj/M8": {
+    "custom": "sharedv_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  }
+}

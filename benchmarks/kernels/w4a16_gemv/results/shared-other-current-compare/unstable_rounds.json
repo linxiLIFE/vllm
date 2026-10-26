@@ -1,0 +1,10 @@
+[
+  {
+    "layer": "o_proj",
+    "M": "31",
+    "cache": "warm",
+    "impl": "shareds4_t2_n2_k8_c0_rows",
+    "round0_us": "13.1905",
+    "round1_us": "11.523"
+  }
+]

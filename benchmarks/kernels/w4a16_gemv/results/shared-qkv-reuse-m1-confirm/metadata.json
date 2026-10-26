@@ -1,0 +1,47 @@
+{
+  "gpu": "NVIDIA GeForce RTX 3060",
+  "torch": "2.13.0+cu132",
+  "cuda": "13.2",
+  "humming_import": "<EXPERIMENT_ENV>/humming-main-package/humming/__init__.py",
+  "humming_commit": "81402fe03040e1233afeea88f3420db7ba01302d",
+  "vllm_commit": "b8e9001bf9568c801985889deff34d3b9fe6d0b0",
+  "args": {
+    "model": "<HF_CACHE>/models--Qwen--Qwen2.5-1.5B-Instruct-GPTQ-Int4/snapshots/4f5a0e31008e2966e8f787964bcc4e1105e03dc3",
+    "cupti_root": "<EXPERIMENT_ENV>/cupti-package",
+    "humming_root": "<EXPERIMENT_ENV>/humming-main-package",
+    "humming_source": "<EXPERIMENT_ENV>/humming-latest-src",
+    "output_dir": "<ARTIFACT_ROOT>/shared-qkv-reuse-m1-confirm",
+    "selection": "<ARTIFACT_ROOT>/shared-qkv-reuse-tune/selection.json",
+    "reference_selection": null,
+    "custom_selection": null,
+    "max_custom_m": 32,
+    "phase": "compare",
+    "layers": [
+      "qkv_proj"
+    ],
+    "batches": [
+      1
+    ],
+    "layer_index": 0,
+    "repeats": 150,
+    "variants": null
+  },
+  "timing": "CUPTI; fixed pointers; graph replay; 100ms warmup; reversed rounds",
+  "cupti_version": "13.4.0",
+  "cold": "FlashInfer 2xL2 flush outside profiled kernel; no parameter rotation",
+  "correctness": "CPU FP32; atol=.002 rtol=.02; relative L2<.001",
+  "resident_parameters": "one Humming allocation; reference on CPU",
+  "excluded": "initial transform, compilation, allocation, host, cache flush",
+  "source_sha256": {
+    "README.md": "9d5b8990e7bfabca68b79e6a496595591c91016c8a37decb8cf1f53c8a81ffaf",
+    "CMakeLists.txt": "e6b10300c296b7ecd1beeb6475661c54b7c51b9eddb0e3de10d6c3e15a9aa3a0",
+    "repack_benchmark.py": "6fc9d2668fe4def77079c8631d46432ba0f82a93aa53aa71d6c0355e18c14b3d",
+    "tensorcore.cu": "dc736c2befffcfc6616157aea34224370b37a26d03c69365f5e4c44cd974601f",
+    "gemv.cu": "b08cafa9913eb5c57be224925ba3e96d2cea35c7af0a9ae09314db26777ae6f1",
+    "batched.cu": "ce74809c4e97e7c1fb695875d633f0463dc3657c52fca7491f23901d59e5c02a",
+    "batch_benchmark.py": "afd0ed8c4c02a26e72118ed128d7f23e59277159fa77afdc0a2a071233ddc555",
+    "shared_layout.cu": "0d1fb0604794107b36ef65bb1386b139f70a8c85f89054c37c15e36e760bbdda",
+    "shared_layout_benchmark.py": "cf698fc654b6e9bdb7f412e0b33eab6f961cbb9b885b2e14ffce8a18641a63ac",
+    "benchmark.py": "ecdb18e29444f6a15e778a6c3506e5c786f85e5c59126da53f58364939f7111b"
+  }
+}

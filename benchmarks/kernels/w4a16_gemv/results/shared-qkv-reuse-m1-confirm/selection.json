@@ -1,0 +1,6 @@
+{
+  "qkv_proj/M1": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_no_streamk"
+  }
+}

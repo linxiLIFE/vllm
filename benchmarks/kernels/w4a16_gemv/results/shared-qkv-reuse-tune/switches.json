@@ -1,0 +1,98 @@
+[
+  {
+    "layer": "qkv_proj",
+    "M": 1,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.783320426940918,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.003566640853881836,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 16,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.7833201885223389,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.003566640377044678,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 2,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.783320426940918,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.003566640853881836,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 32,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.00036058458499610424,
+    "max_abs_error": 0.00390625,
+    "output_rms": 1.7833201885223389,
+    "max_error_over_rms": 0.0021904367062858874,
+    "elementwise_atol": 0.003566640377044678,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 4,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.783320426940918,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.003566640853881836,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 16,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.7833201885223389,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.003566640377044678,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 8,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.0,
+    "max_abs_error": 0.0,
+    "output_rms": 1.783320426940918,
+    "max_error_over_rms": 0.0,
+    "elementwise_atol": 0.003566640853881836,
+    "original_elementwise_tolerance_passed": true
+  },
+  {
+    "layer": "qkv_proj",
+    "M": 32,
+    "weight_ptr": 38699270144,
+    "scale_ptr": 38757664768,
+    "relative_l2_error": 0.00036058458499610424,
+    "max_abs_error": 0.00390625,
+    "output_rms": 1.7833201885223389,
+    "max_error_over_rms": 0.0021904367062858874,
+    "elementwise_atol": 0.003566640377044678,
+    "original_elementwise_tolerance_passed": true
+  }
+]

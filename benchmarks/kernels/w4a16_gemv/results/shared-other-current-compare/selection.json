@@ -1,0 +1,386 @@
+{
+  "o_proj/M1": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M2": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M3": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M4": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M5": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M6": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M7": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M8": {
+    "custom": "shareds4_t2_n2_k8_c0",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M9": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M10": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M11": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M12": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M13": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M14": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M15": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M16": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M17": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M18": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M19": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M20": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M21": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M22": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M23": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M24": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M25": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M26": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M27": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M28": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M29": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M30": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M31": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "o_proj/M32": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "gate_up_proj/M1": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M2": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M3": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M4": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M5": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M6": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M7": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M8": {
+    "custom": "shareds4_t2_n1_k8_c0",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M9": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M10": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M11": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M12": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M13": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M14": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M15": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M16": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M17": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M18": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M19": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M20": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M21": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M22": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M23": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M24": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M25": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M26": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M27": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M28": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M29": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M30": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M31": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "gate_up_proj/M32": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_default"
+  },
+  "down_proj/M1": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M2": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M3": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M4": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M5": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M6": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M7": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M8": {
+    "custom": "shareds4_t2_n1_k16_c0",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M9": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M10": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M11": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M12": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M13": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M14": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M15": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M16": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M17": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M18": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M19": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M20": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M21": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M22": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M23": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M24": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M25": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M26": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M27": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M28": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M29": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M30": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M31": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "down_proj/M32": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  }
+}

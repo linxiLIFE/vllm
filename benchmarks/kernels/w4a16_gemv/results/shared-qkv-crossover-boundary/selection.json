@@ -1,0 +1,18 @@
+{
+  "qkv_proj/M48": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M49": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M50": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  },
+  "qkv_proj/M51": {
+    "custom": "reuse2_t2_k4_s4",
+    "humming": "humming_stages2"
+  }
+}
