@@ -16,13 +16,11 @@ __device__ __forceinline__ uint32_t humming_pair(uint32_t q, half scale) {
 // Humming SM86 W4A16: [K/16, N/64, lane, four N tiles], INT4 interleave 3.
 template <int Tiles, int NWarps, int KWarps, bool Stream,
           bool VectorScale = false, int Steps = 8, bool TileRows = false,
-          int RowTiles = 1, int StageWeights = 0>
-__device__ __forceinline__ void shared_body(const half* __restrict__ x,
-                                            const uint32_t* __restrict__ weight,
-                                            const half* __restrict__ scales,
-                                            half* __restrict__ y, int m, int k,
-                                            int n, float* scratch,
-                                            uint32_t* staging = nullptr) {
+          int RowTiles = 1, int StageWeights = 0, bool Prefetch = false>
+__device__ __forceinline__ void shared_body(
+    const half* __restrict__ x, const uint32_t* __restrict__ weight,
+    const half* __restrict__ scales, half* __restrict__ y, int m, int k, int n,
+    float* scratch, uint32_t* staging = nullptr, const half* bias = nullptr) {
   const int lane = threadIdx.x % 32;
   const int nw = threadIdx.x / 32 % NWarps;
   const int kw = threadIdx.x / 32 / NWarps;
@@ -79,13 +77,35 @@ __device__ __forceinline__ void shared_body(const half* __restrict__ x,
           "l"(ptr), "n"(Tiles * 4)
           : "memory");
     }
+    uint32_t prefetched[Steps][Tiles];
+    if constexpr (Prefetch) {
+#pragma unroll
+      for (int step = 0; step < Steps; ++step) {
+        const uint32_t* ptr =
+            weight + ((first_step + step) * (n / 64) + first / 4) * 128 +
+            lane * 4 + first % 4;
+        if constexpr (Tiles == 4) {
+          const uint4 v = *reinterpret_cast<const uint4*>(ptr);
+#pragma unroll
+          for (int t = 0; t < Tiles; ++t)
+            prefetched[step][t] = reinterpret_cast<const uint32_t*>(&v)[t];
+        } else {
+          const uint2 v = *reinterpret_cast<const uint2*>(ptr);
+          prefetched[step][0] = v.x;
+          prefetched[step][1] = v.y;
+        }
+      }
+    }
 #pragma unroll
     for (int step = 0; step < Steps; ++step) {
       const int k_tile = first_step + step;
       const uint32_t* ptr =
           weight + (k_tile * (n / 64) + first / 4) * 128 + lane * 4 + first % 4;
       uint32_t q[Tiles];
-      if constexpr (StageWeights) {
+      if constexpr (Prefetch) {
+#pragma unroll
+        for (int t = 0; t < Tiles; ++t) q[t] = prefetched[step][t];
+      } else if constexpr (StageWeights) {
         const uint32_t address = static_cast<uint32_t>(
             __cvta_generic_to_shared(staging + threadIdx.x * Tiles));
         if constexpr (StageWeights == 1) {
@@ -186,7 +206,15 @@ __device__ __forceinline__ void shared_body(const half* __restrict__ x,
                       i * 32 + lane];
         const int r = first_row + rt * 8 + pair + i % 2;
         const int col = (first + t) * 16 + row + i / 2 * 8;
-        if (r < m) y[r * n + col] = __float2half_rn(c[rt][t][i]);
+        if (r < m) {
+          half value = __float2half_rn(c[rt][t][i]);
+          if (bias != nullptr) {
+            const int bias_col =
+                col / 32 * 32 + col % 2 + col % 8 / 2 * 8 + col % 32 / 8 * 2;
+            value = __hadd(value, bias[bias_col]);
+          }
+          y[r * n + col] = value;
+        }
       }
     }
   }

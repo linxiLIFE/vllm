@@ -1,0 +1,16 @@
+[
+  "prefetch_r4_t4_k1_s8",
+  "prefetch_r4_t4_k4_s8",
+  "reuse2_t2_k4_s4",
+  "shareds4_t2_n1_k16_c0_rows",
+  "shareds4_t2_n1_k8_c0_rows",
+  "shareds4_t2_n2_k8_c0_rows",
+  "sharedv_t2_n1_k16_c0_rows",
+  "wide_r2_t2_k2_s4",
+  "wide_r2_t4_k1_s4",
+  "wide_r4_t4_k1_s2",
+  "wide_r4_t4_k1_s8",
+  "wide_r4_t4_k4_s2",
+  "wide_r4_t4_k4_s4",
+  "wide_r4_t4_k4_s8"
+]

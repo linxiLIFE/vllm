@@ -1,0 +1,40 @@
+{
+  "model_wide_r4_t4_k4_s2": {
+    "DRAM read MB": 22.729984,
+    "Registers Per Thread": {
+      "value": "124",
+      "unit": "register/thread"
+    },
+    "Achieved Occupancy": {
+      "value": "19.91",
+      "unit": "%"
+    },
+    "Compute (SM) Throughput": {
+      "value": "38.24",
+      "unit": "%"
+    },
+    "DRAM Throughput": {
+      "value": "48.93",
+      "unit": "%"
+    }
+  },
+  "model_reuse2_t2_k4_s4": {
+    "DRAM read MB": 64.474496,
+    "Registers Per Thread": {
+      "value": "56",
+      "unit": "register/thread"
+    },
+    "Achieved Occupancy": {
+      "value": "54.41",
+      "unit": "%"
+    },
+    "Compute (SM) Throughput": {
+      "value": "23.08",
+      "unit": "%"
+    },
+    "DRAM Throughput": {
+      "value": "85.07",
+      "unit": "%"
+    }
+  }
+}

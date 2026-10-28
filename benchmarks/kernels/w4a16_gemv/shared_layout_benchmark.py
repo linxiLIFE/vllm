@@ -203,6 +203,12 @@ def main(args):
     import humming
     from humming.tune import get_heuristics_config
 
+    direct = None
+    if args.humming_direct:
+        from humming_direct import DirectExperiment
+
+        direct = DirectExperiment()
+
     from vllm.utils import humming as hm
 
     assert Path(humming.__file__).resolve().is_relative_to(args.humming_root.resolve())
@@ -353,6 +359,38 @@ def main(args):
                     )
 
                 candidates[name] = ("humming", humming_call)
+                if direct is not None:
+                    for family, mode, compact in (
+                        ("humming", 0, 0),
+                        ("humming_direct_b", 1, 1),
+                        ("humming_direct_all", 2, 2),
+                    ):
+                        variant = (
+                            name
+                            if family == "humming"
+                            else family + "_" + name.removeprefix("humming_")
+                        )
+                        fn, kernel = direct.prepare(
+                            hc, COMPUTE, tuning, mode, compact, locks
+                        )
+                        candidates[variant] = (family, fn)
+                        from humming.ops.launcher import get_kernel_smem_size
+
+                        parameters.append(
+                            dict(
+                                case=key,
+                                impl=variant,
+                                config=config,
+                                cubin=kernel.kernel_filename,
+                                shared_bytes=get_kernel_smem_size(kernel.kernel_id),
+                                registers=checked(
+                                    driver.cuFuncGetAttribute(
+                                        driver.CUfunction_attribute.CU_FUNC_ATTRIBUTE_NUM_REGS,
+                                        kernel.load_cubin(),
+                                    )
+                                ),
+                            )
+                        )
             if m <= args.max_custom_m:
                 for name in CONFIGS:
                     if name not in ROW_CAPACITY and name.endswith("_rows") != (m > 8):
@@ -368,6 +406,19 @@ def main(args):
                     candidates[name] = ("custom", custom_call)
             if selected:
                 keep = set(selected[key].values()) | {"humming_default"}
+                if direct is not None:
+                    suffixes = set()
+                    for family in ("humming", "humming_direct_b", "humming_direct_all"):
+                        suffixes.add(selected[key][family].removeprefix(family + "_"))
+                    for suffix in suffixes:
+                        keep.update(
+                            family + "_" + suffix
+                            for family in (
+                                "humming",
+                                "humming_direct_b",
+                                "humming_direct_all",
+                            )
+                        )
                 if reference_selected:
                     keep.update(reference_selected[key].values())
                 candidates = {name: v for name, v in candidates.items() if name in keep}
@@ -397,6 +448,8 @@ def main(args):
                     if family == "custom":
                         raise
             families = ("custom", "humming") if m <= args.max_custom_m else ("humming",)
+            if direct is not None:
+                families += ("humming_direct_b", "humming_direct_all")
             for family in families:
                 assert any(
                     f == family and eligible[name] for name, (f, _) in valid.items()
@@ -506,6 +559,7 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--selection", type=Path)
     parser.add_argument("--reference-selection", type=Path)
+    parser.add_argument("--humming-direct", action="store_true")
     parser.add_argument("--custom-selection", type=Path)
     parser.add_argument("--max-custom-m", type=int, choices=(8, 32, 64), default=8)
     parser.add_argument(

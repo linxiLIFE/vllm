@@ -42,3 +42,15 @@ add_custom_command(
   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shared_layout.cu"
   VERBATIM)
 add_custom_target(shared_layout ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/shared_layout.cubin")
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/wide_gemm.cubin"
+  COMMAND "${NVCC}" --cubin -std=c++17 -O3 -lineinfo
+          "-arch=sm_${GEMV_ARCH}" -Xptxas=-v
+          "${CMAKE_CURRENT_SOURCE_DIR}/wide_gemm.cu"
+          -o "${CMAKE_CURRENT_BINARY_DIR}/wide_gemm.cubin"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/wide_gemm.cu"
+          "${CMAKE_CURRENT_SOURCE_DIR}/model_dispatch.cu"
+          "${CMAKE_CURRENT_SOURCE_DIR}/shared_layout.cu"
+  VERBATIM)
+add_custom_target(wide_gemm DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/wide_gemm.cubin")

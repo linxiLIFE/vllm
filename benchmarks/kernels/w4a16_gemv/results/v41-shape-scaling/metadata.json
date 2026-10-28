@@ -1,0 +1,100 @@
+{
+  "command": [
+    "benchmarks/kernels/w4a16_gemv/shape_scaling.py",
+    "--humming-root",
+    "/home/linxi/.local/state/vllm-qwen-int4/humming-latest-src",
+    "--cupti-root",
+    "/home/linxi/.local/state/vllm-qwen-int4/cupti-package",
+    "--output-dir",
+    "/home/linxi/.local/state/vllm-qwen-int4/gemv-experiment/v41-shape-confirm",
+    "--batches",
+    "1",
+    "8",
+    "32",
+    "64",
+    "--selection",
+    "/home/linxi/.local/state/vllm-qwen-int4/gemv-experiment/v41-shape-tune/selection.json",
+    "--seed",
+    "1",
+    "--rounds",
+    "2",
+    "--repeats",
+    "150",
+    "--warmup-ms",
+    "100"
+  ],
+  "gpu": "NVIDIA GeForce RTX 3060",
+  "torch": "2.13.0+cu132",
+  "cuda": "13.2",
+  "vllm_commit": "8555906fd4a78b27093b647c12ba986616a1b716",
+  "humming_commit": "81402fe03040e1233afeea88f3420db7ba01302d",
+  "shapes": {
+    "qwen_qkv": [
+      1536,
+      2048
+    ],
+    "qwen_o": [
+      1536,
+      1536
+    ],
+    "qwen_gate_up": [
+      1536,
+      17920
+    ],
+    "qwen_down": [
+      8960,
+      1536
+    ],
+    "v41_q_a": [
+      5120,
+      1280
+    ],
+    "v41_q_b": [
+      1280,
+      32768
+    ],
+    "v41_kv": [
+      5120,
+      512
+    ],
+    "v41_o_a_group": [
+      4096,
+      1024
+    ],
+    "v41_o_b": [
+      8192,
+      5120
+    ],
+    "v41_expert_gate_up": [
+      5120,
+      4608
+    ],
+    "v41_expert_down": [
+      2304,
+      5120
+    ],
+    "v41_index_q_b": [
+      1280,
+      4096
+    ]
+  },
+  "shape_source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/314113f8a7dadb388215396ba5fbee2c610a04d6/inference/model.py",
+  "shape_revision": "314113f8a7dadb388215396ba5fbee2c610a04d6",
+  "seed": 1,
+  "rounds": 2,
+  "repeats": 150,
+  "warmup_ms": 100,
+  "cupti_version": "13.4.0",
+  "selection_source": "/home/linxi/.local/state/vllm-qwen-int4/gemv-experiment/v41-shape-tune/selection.json",
+  "timing": "CUPTI graph replay; cold flush excluded; reverse order rounds",
+  "precision": "synthetic symmetric INT4 group128, FP16 dequant, FP32 accum",
+  "limitations": "TP1 individual GEMMs; no routing/communication/attention; V4.1 native FP8/FP4 and bias-free projections not reproduced",
+  "source_sha256": {
+    "shape_scaling.py": "feebb1ab5939323b251373b84d217905f8bced2c55c77f1bd9e9aa8b7140a749",
+    "model_dispatch.cu": "68b4ed7bd4433fac54a43b3e0c6a7e7f30412065bfbe8d554d0d79f6aac26384",
+    "shared_layout.cu": "f38a550b11cd0b53b5fd764bfc8933f57f1b1a9487758261c34890697491ca32",
+    "shared_layout_benchmark.py": "3f2697b8d6145a43a6218928e4750fa03711a3ae72849764b01a8b1958f6ed7f",
+    "batch_benchmark.py": "afd0ed8c4c02a26e72118ed128d7f23e59277159fa77afdc0a2a071233ddc555",
+    "benchmark.py": "ecdb18e29444f6a15e778a6c3506e5c786f85e5c59126da53f58364939f7111b"
+  }
+}

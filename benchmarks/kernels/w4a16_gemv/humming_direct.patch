@@ -1,0 +1,322 @@
+--- a/humming/include/humming/kernel/humming.cuh
++++ b/humming/include/humming/kernel/humming.cuh
+@@ -104,6 +104,9 @@
+     const uint32_t num_slice_iters = Ctx::kUseStreamK ? slice_iters : kStaticSliceIters;
+     producer.seek(scheduler.expert_id, scheduler.m_block_id, scheduler.n_block_id, scheduler.k_block_id, scheduler.current_shape_m, scheduler.m_offset);
+     s2r_pipe.seek(scheduler.m_offset);
++#if HUMMING_DIRECT_MODE
++    s2r_pipe.seek_direct(scheduler.n_block_id, scheduler.k_block_id, scheduler.m_offset);
++#endif
+     if constexpr (Ctx::kUseTmaA) producer.prefetch_stage();
+     epilogue.seek(scheduler.expert_id, scheduler.m_block_id, scheduler.n_block_id, scheduler.current_shape_m, scheduler.m_offset);
+     epilogue.set_streamk_state(scheduler.slice_count, scheduler.slice_id, scheduler.locks_offset);
+@@ -119,31 +122,31 @@
+         pdl_waited = true;
+       }
+     }
+-    producer.template load_stage<true, true>(0);
++    if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.template load_stage<true, true>(0);
+     unroll_for<1, MAX(kNumStages - 1, 2), TuningConfig::kProducerStageUnroll>([&](uint32_t stage_id) {
+-      producer.load_stage(stage_id, stage_id < num_slice_iters);
++      if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.load_stage(stage_id, stage_id < num_slice_iters);
+     });
+ 
+-    consumer.template wait_stage<true>(kNumStages);
++    if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) consumer.template wait_stage<true>(kNumStages);
+     s2r_pipe.template load_stage_iter<true>(0, 0);
+     mma.transform_b(0, 0);
+ 
+     auto consume_stage = [&](uint32_t stage_id, uint32_t slice_iter) {
+       debug_kernel_timeout_check(debug_start_clock);
+       const uint32_t remaining_iters = num_slice_iters - slice_iter;
+-      if (remaining_iters == 1) producer.load_channel();
++      if (remaining_iters == 1) if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.load_channel();
+       PRAGMA_UNROLL
+       for (uint32_t warp_iter_id = 0; warp_iter_id < Ctx::kWarpIters; warp_iter_id++) {
+         if constexpr (Ctx::kWgmmaSplitIssueWait) {
+           mma.issue(stage_id, warp_iter_id);
+           if constexpr (Ctx::kWarpIters == 1) {
+             // Refill a different stage; the current WGMMA stage stays live until wait.
+-            __syncthreads();
++            if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) __syncthreads();
+             if constexpr (kNumStages > 2)
+-              producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
++              if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
+           }
+           if (warp_iter_id == Ctx::kWarpIters - 1 && remaining_iters > 1)
+-            consumer.wait_stage((stage_id + 1) % kNumStages);
++            if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) consumer.wait_stage((stage_id + 1) % kNumStages);
+           const bool use_late_scale_prefetch = Ctx::kUseWgmmaLateScalePrefetch && warp_iter_id == Ctx::kWarpIters - 1;
+           if (use_late_scale_prefetch)
+             s2r_pipe.load_stage_iter_data(stage_id, warp_iter_id + 1);
+@@ -154,20 +157,20 @@
+             s2r_pipe.load_stage_iter_scales(stage_id, warp_iter_id + 1);
+ 
+           if (Ctx::kWarpIters > 1 && warp_iter_id == Ctx::kWarpIters - 2) {
+-            __syncthreads();
++            if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) __syncthreads();
+             if constexpr (kNumStages > 2)
+-              producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
++              if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
+           }
+         } else {
+           if constexpr (Ctx::kWarpIters == 1) {
+             mma.run(stage_id, warp_iter_id);
+-            __syncthreads();
++            if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) __syncthreads();
+             if constexpr (kNumStages > 2) {
+-              producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
++              if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
+             }
+           }
+           if (warp_iter_id == Ctx::kWarpIters - 1 && remaining_iters > 1) {
+-            consumer.wait_stage((stage_id + 1) % kNumStages);
++            if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) consumer.wait_stage((stage_id + 1) % kNumStages);
+           }
+           constexpr bool kDeferScalePrefetch = Ctx::kUseWgmma && ElementA::kBits < 16 &&
+                                                (Ctx::kPreserveASForPromotion || Ctx::kPreserveBSForPromotion);
+@@ -180,9 +183,9 @@
+             if constexpr (Ctx::kWarpIters > 1) mma.run(stage_id, warp_iter_id);
+           }
+           if (Ctx::kWarpIters > 1 && warp_iter_id == Ctx::kWarpIters - 2) {
+-            __syncthreads();
++            if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) __syncthreads();
+             if constexpr (kNumStages > 2) {
+-              producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
++              if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.load_stage(stage_id + kNumStages - 1, remaining_iters >= kNumStages);
+             }
+           }
+         }
+@@ -191,7 +194,7 @@
+             (warp_iter_id + 1) % Ctx::kWarpIters);
+       }
+       if constexpr (kNumStages == 2) {
+-        producer.load_stage(stage_id, remaining_iters > kNumStages);
++        if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) producer.load_stage(stage_id, remaining_iters > kNumStages);
+       }
+     };
+ 
+@@ -208,7 +211,7 @@
+       }
+     });
+ 
+-    consumer.wait_channel();
++    if constexpr (!(HUMMING_DIRECT_MODE == 2 && HUMMING_DIRECT_COMPACT == 2)) consumer.wait_channel();
+     s2r_pipe.load_channel(scheduler.slice_id);
+     __syncthreads();
+     epilogue.call(mma.final_regs_c_as_ptr());
+--- a/humming/include/humming/memory/g2s_pipeline.cuh
++++ b/humming/include/humming/memory/g2s_pipeline.cuh
+@@ -252,13 +252,13 @@
+     uint64_t *mbar_ptr = nullptr;
+     if constexpr (kUseMBarrier) mbar_ptr = &smem.load_mbar[mbar_index];
+     if (pred) {
+-      loader_a.template load<kShouldAdvance>(smem.stages[stage_id].a, mbar_ptr, stage_id);
+-      loader_b.template load<kShouldAdvance>(smem.stages[stage_id].b, mbar_ptr);
++      if constexpr (HUMMING_DIRECT_MODE != 2) loader_a.template load<kShouldAdvance>(smem.stages[stage_id].a, mbar_ptr, stage_id);
++      if constexpr (!HUMMING_DIRECT_MODE) loader_b.template load<kShouldAdvance>(smem.stages[stage_id].b, mbar_ptr);
+       if constexpr (kIsGroupInputScale) {
+         loader_as.template load<kShouldAdvance>(smem.stages[stage_id].as, mbar_ptr);
+       };
+       if constexpr (kIsGroupWeightScale || kIsBlockWeightScale) {
+-        loader_bs.template load<kShouldAdvance>(smem.stages[stage_id].bs, mbar_ptr);
++        if constexpr (HUMMING_DIRECT_MODE != 2) loader_bs.template load<kShouldAdvance>(smem.stages[stage_id].bs, mbar_ptr);
+       };
+       if constexpr (kHasZeroPoint && (kIsGroupWeightScale || kIsFirst)) {
+         if constexpr (kIsChannelWeightScale)
+--- a/humming/include/humming/memory/s2r_loader/loader_a.cuh
++++ b/humming/include/humming/memory/s2r_loader/loader_a.cuh
+@@ -17,6 +17,31 @@
+ 
+ public:
+   CUDA_INLINE S2RMemoryLoaderA(Ctx &ctx) : ctx(ctx) {}
++
++
++#if HUMMING_DIRECT_MODE == 2
++  CUDA_INLINE void load_direct(uint32_t* regs, uint32_t iter_id,
++                               uint32_t stage, uint32_t m_offset) {
++    static_assert(ElementA::kBits == 16 && !Ctx::kIsIndexedGemm);
++    const half* source = reinterpret_cast<const half*>(ctx.params.a);
++    const uint32_t k = stage * BlockShape::K + ctx.k_warp_offset() + iter_id * 16;
++    PRAGMA_UNROLL
++    for (uint32_t i = 0; i < CEIL_DIV(WarpShape::M, 16); ++i) {
++      constexpr uint32_t count = WarpShape::M % 16 == 8 ? 2 : 4;
++      PRAGMA_UNROLL
++      for (uint32_t j = 0; j < count; ++j) {
++        const uint32_t row = m_offset + ctx.m_warp_offset() + i * 16 +
++            ctx.lane_id() / 4 + (MmaShape::M == 8 ? j / 2 : j % 2) * 8;
++        const uint32_t col = k + ctx.lane_id() % 4 * 2 +
++            (MmaShape::M == 8 ? j % 2 : j / 2) * 8;
++        uint32_t value = 0;
++        if (row < ctx.params.shape_m && col < Ctx::ProblemShape::K)
++          value = *reinterpret_cast<const uint32_t*>(source + row * Ctx::ProblemShape::K + col);
++        regs[i * 4 + j] = value;
++      }
++    }
++  }
++#endif
+ 
+   CUDA_INLINE
+   void load(const int4 *smem_ptr, uint32_t *regs_ptr, uint32_t iter_id, uint32_t stage_id = 0) {
+--- a/humming/include/humming/memory/s2r_loader/loader_b.cuh
++++ b/humming/include/humming/memory/s2r_loader/loader_b.cuh
+@@ -111,6 +111,42 @@
+     }
+   }
+ 
++
++#if HUMMING_DIRECT_MODE
++  CUDA_INLINE void load_direct(uint32_t* regs_ptr, uint32_t iter_id,
++                               uint32_t stage, uint32_t n_block) {
++    static_assert(ElementA::kBits == 16 && ElementQB::kBits == 4);
++    static_assert(!Ctx::kUseRawWeight && !Ctx::kUseFlatWeight && !Ctx::kUsePackedKLayout);
++    static_assert(!Ctx::kUseWgmma && !Ctx::kUseLdmatrixDequant);
++    uint32_t nw = ctx.n_warp_id();
++    if (kIsWarpHalfGroup) nw /= 2;
++    constexpr uint32_t blocks = MAX(WarpShape::N / 64, 1);
++    uint32_t idx = blocks * 32 * nw + ctx.lane_id();
++    if constexpr (K_WARPS > 1)
++      idx += TRUE_N_WARPS * 32 * blocks * Ctx::kWarpIters * ctx.k_warp_id();
++    LoadType* destination = reinterpret_cast<LoadType*>(regs_ptr);
++    const char* source = reinterpret_cast<const char*>(ctx.params.b);
++    PRAGMA_UNROLL
++    for (uint32_t i = 0; i < blocks; ++i) {
++      PRAGMA_UNROLL
++      for (uint32_t j = 0; j < kLoadIters; ++j) {
++        uint32_t local = (idx + 32 * i) * kLoadIters;
++        if constexpr (kLoadHalfGroup)
++          local = local * 2 + ctx.warp_id() % 2 * kLoadIters;
++        local = (local + j) * sizeof(LoadType) + kSmemStride * iter_id * sizeof(int4);
++        constexpr uint32_t local_stride = BlockShape::N * 8;
++        const uint32_t k = stage * BlockShape::K / 16 + local / local_stride;
++        const uint64_t offset = uint64_t(k) * Ctx::ProblemShape::N * 8 +
++                                n_block * local_stride + local % local_stride;
++        LoadType value{};
++        if (k < Ctx::ProblemShape::K / 16)
++          value = *reinterpret_cast<const LoadType*>(source + offset);
++        destination[i * kLoadIters + j] = value;
++      }
++    }
++  }
++#endif
++
+   CUDA_INLINE
+   void load(const int4 *smem_ptr, uint32_t *regs_ptr, uint32_t iter_id) {
+     if constexpr (Ctx::kUseLdmatrixDequant) return load_dequant(smem_ptr, regs_ptr, iter_id);
+--- a/humming/include/humming/memory/s2r_loader/loader_bs.cuh
++++ b/humming/include/humming/memory/s2r_loader/loader_bs.cuh
+@@ -63,6 +63,30 @@
+     }
+   }
+ 
++
++#if HUMMING_DIRECT_MODE == 2
++  CUDA_INLINE void load_direct(uint32_t* regs, uint32_t iter_id,
++                               uint32_t stage, uint32_t n_block) {
++    static_assert(ElementA::kBits == 16 && ElementBS::kBits == 16);
++    static_assert(!kIsChannel && !kIsBlock && !kUseWgmma);
++    using LoadType = typename LoadTypeChooser<WarpShape::N / 8 * 2>::Type;
++    constexpr uint32_t warps_per_pack = 64 / WarpShape::N;
++    constexpr uint32_t pack_size = 128 / sizeof(LoadType);
++    const uint32_t nw = ctx.n_warp_id();
++    const uint32_t offset = ctx.lane_id() / 4 * warps_per_pack +
++                           nw % warps_per_pack + nw / warps_per_pack * pack_size;
++    const uint32_t k = stage * BlockShape::K + ctx.k_warp_offset() + iter_id * 16;
++    const uint32_t group = k / kGroupSize;
++    const char* source = reinterpret_cast<const char*>(ctx.params.bs);
++    LoadType value{};
++    if (k < Ctx::ProblemShape::K)
++      value = *reinterpret_cast<const LoadType*>(source +
++          (uint64_t(group) * Ctx::ProblemShape::N + n_block * BlockShape::N) * 2 +
++          offset * sizeof(LoadType));
++    *reinterpret_cast<LoadType*>(regs) = value;
++  }
++#endif
++
+   CUDA_INLINE
+   void load(const int4 *smem_ptr, uint32_t *regs_ptr, int32_t iter_id) {
+     if constexpr (Ctx::kUseWgmmaSsNLayout && !kIsBlock) {
+--- a/humming/include/humming/memory/s2r_pipeline.cuh
++++ b/humming/include/humming/memory/s2r_pipeline.cuh
+@@ -50,6 +50,14 @@
+ 
+ public:
+   Ctx &ctx;
++#if HUMMING_DIRECT_MODE
++  uint32_t direct_stage, direct_n, direct_m;
++  CUDA_INLINE void seek_direct(uint32_t n, uint32_t k, uint32_t m) {
++    direct_stage = k;
++    direct_n = n;
++    direct_m = m;
++  }
++#endif
+   MMA &mma;
+   Epilogue &epilogue;
+   LoaderA loader_a;
+@@ -80,15 +88,26 @@
+   }
+ 
+   CUDA_INLINE void load_stage_iter_data(uint32_t stage_id, uint32_t iter_id) {
++#if HUMMING_DIRECT_MODE
++    if (iter_id == Ctx::kWarpIters) ++direct_stage;
++#endif
+     stage_id = get_fragment_stage(stage_id, iter_id);
+     iter_id = iter_id % Ctx::kWarpIters;
+     uint32_t buffer_id = iter_id % 2;
+     auto &smem = ctx.smem;
+ 
+     if constexpr (!Ctx::kUseWgmmaSs)
++#if HUMMING_DIRECT_MODE
++      loader_b.load_direct(mma.regs_qb_as_ptr(buffer_id), iter_id, direct_stage, direct_n);
++#else
+       loader_b.load(smem.stages[stage_id].b, mma.regs_qb_as_ptr(buffer_id), iter_id);
++#endif
+     if constexpr (!kUseWgmma && !Ctx::kUseUmma)
++#if HUMMING_DIRECT_MODE == 2
++      loader_a.load_direct(mma.regs_a_as_ptr(buffer_id), iter_id, direct_stage, direct_m);
++#else
+       loader_a.load(smem.stages[stage_id].a, mma.regs_a_as_ptr(buffer_id), iter_id, stage_id);
++#endif
+   }
+ 
+   template <bool kIsFirst = false>
+@@ -111,7 +130,11 @@
+       if constexpr (kIsGroupInputScale && !Ctx::kWgmmaUseLateAS)
+         loader_as.load(smem.stages[stage_id].as, mma.arith.regs_as_as_ptr(buffer_id), k_iter_id);
+       if constexpr (!USE_PPU && kIsGroupOrBlockWeightScale)
++#if HUMMING_DIRECT_MODE == 2
++        loader_bs.load_direct(mma.arith.regs_bs_as_ptr(buffer_id), bs_iter_id, direct_stage, direct_n);
++#else
+         loader_bs.load(smem.stages[stage_id].bs, mma.arith.regs_bs_as_ptr(buffer_id), bs_iter_id);
++#endif
+     }
+     if constexpr (kHasZeroPoint && (kIsGroupOrBlockWeightScale || kIsFirst)) {
+       if constexpr (kIsChannelWeightScale)
+--- a/humming/include/humming/utils/all.cuh
++++ b/humming/include/humming/utils/all.cuh
+@@ -1,3 +1,9 @@
++#ifndef HUMMING_DIRECT_MODE
++#define HUMMING_DIRECT_MODE 0
++#endif
++#ifndef HUMMING_DIRECT_COMPACT
++#define HUMMING_DIRECT_COMPACT 0
++#endif
+ #pragma
+ 
+ #include <humming/utils/base.cuh>
+--- a/humming/include/humming/utils/storage.cuh
++++ b/humming/include/humming/utils/storage.cuh
+@@ -238,10 +238,10 @@
+ 
+   static constexpr bool kUseWarpSpec = TuningConfig::kUseWarpSpec;
+   struct StageStorage {
+-    alignas(1024) int4 a[kStageSizeA];
+-    alignas(LayerConfig::kUseRawWeight || LayerConfig::kUseFlatWeight ? 1024 : 128) int4 b[kStageSizeB];
++    alignas(1024) int4 a[(HUMMING_DIRECT_COMPACT && (HUMMING_DIRECT_MODE == 2)) ? 1 : kStageSizeA];
++    alignas(LayerConfig::kUseRawWeight || LayerConfig::kUseFlatWeight ? 1024 : 128) int4 b[(HUMMING_DIRECT_COMPACT && (HUMMING_DIRECT_MODE)) ? 1 : kStageSizeB];
+     IF_HAS_STAGE_INPUT_SCALE(alignas(128) int4 as[kStageSizeAS];)
+-    IF_HAS_STAGE_WEIGHT_SCALE(alignas(128) int4 bs[kStageSizeBS];)
++    IF_HAS_STAGE_WEIGHT_SCALE(alignas(128) int4 bs[(HUMMING_DIRECT_COMPACT && (HUMMING_DIRECT_MODE == 2)) ? 1 : kStageSizeBS];)
+     IF_HAS_STAGE_ZERO_POINT(alignas(128) int4 bzp[kStageSizeBZP];)
+     IF_HAS_UMMA_SCALE_SCRATCH(alignas(128) int4 umma_scales[kStageSizeUmmaScales];)
+   };

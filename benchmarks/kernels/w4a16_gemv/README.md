@@ -4,9 +4,268 @@ This experiment compares CUDA variants with Humming and vLLM Marlin using real
 Qwen2.5-1.5B-Instruct-GPTQ-Int4 attention and MLP weights. It is a
 standalone benchmark, not a registered vLLM quantization backend.
 
+## Synthetic DeepSeek V4.1 projection shapes
+
+`shape_scaling.py` generates random packed INT4 weights without loading a
+checkpoint. It compares the existing fused-bias CUDA entries in
+`model_dispatch.cu` against Humming with fused bias, sharing the same transformed
+weight, scale and bias pointers. `--bias-modes none fused` also measures the
+bias-free case. `separate` is an optional custom GEMM plus separate bias-add
+ablation; Humming still fuses bias in that arm.
+
+Shapes come from the official DeepSeek-V4.1-Flash inference implementation at
+revision `314113f8a7dadb388215396ba5fbee2c610a04d6`. They include Q low-rank
+projections, KV, grouped output projection, expert gate/up and down, and indexer
+Q. `v41_o_a_group` measures one of eight independent groups. Expert gate/up
+stacks two projections for a single expert; its M is the tokens assigned to
+that expert. The four Qwen shapes provide a synthetic small-model control.
+Native V4.1 FP8/FP4 precision, MoE routing, grouped scheduling, attention and
+communication are outside this experiment. The official projections are
+bias-free; nonzero bias is an explicit operator ablation.
+
+Tune both families, then fix their configurations for independent confirmation:
+
+```bash
+LIBRARY_PATH=/usr/lib/wsl/lib .venv/bin/python \
+  benchmarks/kernels/w4a16_gemv/shape_scaling.py \
+  --humming-root /path/to/humming-package --cupti-root /path/to/cupti-package \
+  --output-dir /tmp/v41-shape-tune --batches 1 8 32 64 \
+  --rounds 1 --repeats 50 --warmup-ms 100
+LIBRARY_PATH=/usr/lib/wsl/lib .venv/bin/python \
+  benchmarks/kernels/w4a16_gemv/shape_scaling.py \
+  --humming-root /path/to/humming-package --cupti-root /path/to/cupti-package \
+  --output-dir /tmp/v41-shape-confirm --batches 1 8 32 64 \
+  --selection /tmp/v41-shape-tune/selection.json \
+  --seed 1 --rounds 2 --repeats 150 --warmup-ms 100
+.venv/bin/python benchmarks/kernels/w4a16_gemv/shape_scaling_report.py \
+  --input-dir /tmp/v41-shape-confirm
+```
+
+The plotting command needs matplotlib. The benchmark saves raw CUPTI samples,
+round medians, selected configurations, independent decoded-weight reference
+checks and source hashes. Every case checks correctness before timing, and
+confirmation reverses implementation order between rounds. Cold-L2 flush,
+initial weight transformation, allocations and compilation are excluded.
+Reported bandwidth uses ideal bytes for one read of each input/parameter and
+one output write; it is not measured DRAM traffic. The plotting command produces
+`report.md`, `speedup.png` and `speedup.svg` from saved results.
+See the [V4.1 shape results](results/v41-shape-scaling/README.md) for the measured
+speedups, regressions and separate-bias ablation.
+
+### Wider tiling and register prefetch
+
+`wide_gemm.cu` extends the fused kernel family with 32/64-column output tiles,
+8/16/32/64-row reuse, and 1/2/4 K warps. Shorter K loops control register
+pressure; selected variants prefetch one 128-element group's packed weight
+words into registers before consuming them. Weight dequantization remains
+inside GEMM, using the existing Humming allocation and fused bias epilogue.
+
+The harness builds this cubin incrementally with the CMake `wide_gemm` target.
+`--build-dir` shares a build across runs; `--variants` restricts tuning to a
+candidate list. `--previous-selection` adds the original custom configuration
+as a control. It does not alter the fixed winner supplied by `--selection`.
+`--profile-only` runs reference checks without CUPTI timing, allowing Nsight
+Compute to collect counters without competing CUPTI subscribers.
+
+Reproduce the fixed three-arm confirmation on SM86:
+
+```bash
+LIBRARY_PATH=/usr/lib/wsl/lib .venv/bin/python \
+  benchmarks/kernels/w4a16_gemv/shape_scaling.py \
+  --humming-root /path/to/humming-package --cupti-root /path/to/cupti-package \
+  --output-dir /tmp/v41-opt-confirm --build-dir /tmp/v41-opt-build \
+  --batches 1 8 32 64 --bias-modes fused --seed 1 \
+  --selection benchmarks/kernels/w4a16_gemv/results/v41-shape-optimized/selection.json \
+  --previous-selection benchmarks/kernels/w4a16_gemv/results/v41-shape-scaling/selection.json \
+  --rounds 2 --repeats 150 --warmup-ms 100
+```
+
+These are standalone kernel choices. The Qwen real-model dispatch below does
+not automatically acquire the new configurations or support DeepSeek's native
+FP8/FP4 checkpoint. See the [optimization results](results/v41-shape-optimized/README.md)
+for controlled old/new/Humming comparisons and limitations.
+
+## Real-model dispatch experiment
+
+`model_dispatch.py` installs a process-local dispatch in vLLM's
+`HummingLinearMethod.apply` and loads the real checkpoint with
+`--quantization humming --load-format auto`. It shares Humming's transformed
+parameters across all 28 layers: custom kernels handle QKV through M=48, O
+through M=24, and gate/up and down through M=8. Larger and unsupported shapes
+use the original Humming method. The QKV epilogue consumes Humming's permuted
+bias directly; `--unfused-bias` provides a separate-add ablation. Humming
+already fuses bias, so this preserves that feature in the custom path.
+
+```bash
+LIBRARY_PATH=/usr/lib/wsl/lib PYTHONPATH=/path/to/humming-package \
+  .venv/bin/python benchmarks/kernels/w4a16_gemv/model_dispatch.py \
+  --backend hybrid --dispatch-build /tmp/model-dispatch/build \
+  --dispatch-stats /tmp/model-dispatch/stats.json --validate-layers \
+  --model /path/to/Qwen2.5-1.5B-Instruct-GPTQ-Int4 \
+  --quantization humming --load-format auto --dtype float16 \
+  --max-model-len 1024 --max-num-seqs 64 --max-num-batched-tokens 512 \
+  --gpu-memory-utilization 0.5 --kv-len-jitter 0 \
+  --case decode1=1*1@128 --case decode8=8*1@128 \
+  --case decode48=48*1@128 --case decode49=49*1@128 \
+  --case prefill=128 --iters 50 --samples 7 \
+  --output-json /tmp/model-dispatch/forward.json
+```
+
+Repeat with `--backend humming` and separate output paths for the baseline.
+The forward benchmark captures the real transformer in CUDA graphs; it excludes
+the final logits projection, sampling and scheduler overhead and does not
+flush L2 between layers. Use
+`--generation --generation-batches 1 8 32` instead of `--case` arguments to
+time `LLM.generate` with greedy 1- and 65-token outputs, top-5 logprobs,
+one warmup and three repetitions. Generation uses full decode graphs and eager
+prefill, with prefix caching disabled. Its times include host scheduling,
+sampling, logprobs and detokenization. Difference the 65- and 1-token times
+to estimate average decode cost. Four fixed English/Chinese/code prompts
+provide token/logprob comparisons, not a task-accuracy evaluation.
+Use `--generation-logprobs 0` for ordinary generation without logprobs.
+See [real-model results](model_dispatch_results.md) for measurements and limits.
+
+For a dense real-model decode sweep, `model_batch_sweep.py` measures every
+integer batch from 1 through 52 by default. Two rounds reverse both backend
+order and batch order. Both paths retain fused bias and the same remaining
+model operators. Each hybrid run checks all eligible layers against Humming.
+
+```bash
+LIBRARY_PATH=/usr/lib/wsl/lib .venv/bin/python \
+  benchmarks/kernels/w4a16_gemv/model_batch_sweep.py \
+  --model /path/to/Qwen2.5-1.5B-Instruct-GPTQ-Int4 \
+  --humming-root /path/to/humming-package \
+  --output-dir /tmp/model-batch-sweep \
+  --max-batch 52 --rounds 2 --iters 30 --samples 5
+```
+
+The plotting step requires matplotlib. Outputs include per-run JSON, logs,
+dispatch validation records, metadata, `summary.csv`, `batch-sweep.png` and
+`batch-sweep.svg`. Shading shows the range of round medians, not a confidence
+interval. Dashed lines mark configured projection dispatch boundaries from
+the earlier kernel experiments; they are not newly inferred model crossovers.
+Append `--plot-only` with the same output directory and sweep settings to
+regenerate plots without using the GPU.
+
+`--validate-layers` checks custom outputs against Humming on each first
+layer/batch invocation outside capture, requiring finite values and relative
+L2 below 0.002. Dispatch stats count eager/capture calls, not graph replays.
+Metadata records command, source hashes, GPU and library versions.
+
+### Streaming HTTP service metrics
+
+`model_serving_benchmark.py` starts isolated local vLLM servers and invokes
+`vllm bench serve` against their streaming completions endpoint. The hybrid
+server loads `model_serving_worker.Worker`, which installs the same dispatch
+inside the engine process before loading the model. Humming and hybrid retain
+the same fused bias, FlashAttention backend, decode graphs and scheduler
+settings. Prefix caching and torch.compile are disabled in both.
+
+```bash
+LIBRARY_PATH=/usr/lib/wsl/lib .venv/bin/python \
+  benchmarks/kernels/w4a16_gemv/model_serving_benchmark.py \
+  --model /path/to/Qwen2.5-1.5B-Instruct-GPTQ-Int4 \
+  --humming-root /path/to/humming-package \
+  --output-dir /tmp/model-serving
+```
+
+Defaults: concurrency 1/2/4/8/16/32, input lengths 128/512, fixed output
+length 128, two backend-order-reversed rounds, seeded random prompts, greedy
+sampling, no logprobs and forced output length. Each case has
+`max(32, concurrency * 8)` measured requests after warmup. This is a closed-loop
+concurrency test over loopback HTTP, not an open-loop production arrival trace.
+TTFT starts when the client sends the request, excluding time waiting for its
+concurrency semaphore. TPOT is `(request latency - TTFT) / (output tokens - 1)`.
+Output throughput includes prefill and the complete measured workload duration.
+
+Once finished, append `--summarize-only` to the same command to produce
+`summary.csv`, `summary.json`, `metadata.json`, `serving-metrics.png` and SVG
+(requires matplotlib). Latency percentiles pool requests from both rounds;
+throughput is the median of round throughputs. Shading shows the range of
+round medians for latency and of round throughputs; it is not a confidence interval.
+Per-request timings, texts, errors, server/client logs and exact commands are
+retained. P95/P99 from this small sample are exploratory, not production SLAs.
+Servers are stopped after each arm. Dispatch counts are saved on worker shutdown.
+See [streaming service results](model_serving_results.md) for measured TTFT,
+TPOT, output throughput and tail latencies, including regressions.
+
+### Diagnosing serving variability
+
+[Stability investigation](model_stability_results.md) compares same-model
+ABBA forward timing, fixed request waves versus refill, wrapped-Humming
+controls, asynchronous per-step timings and a fixed standalone logits GEMM.
+`model_forward_abba.py --output-dir ...` accepts the usual real-weight
+`vllm bench forward` arguments. `model_serving_diagnose.py` accepts `--model`,
+`--humming-root` and `--output-dir`; it runs a fixed concurrency-4 investigation
+and uses a 15-second shutdown timeout to export diagnostic events safely.
+`analyze_model_stability.py --input-dir ...` summarizes those saved records.
+`sampler_jitter.py --output ...` reproduces GPU timing variation without a
+model, HTTP, prefill or custom dispatch. Its optional Nsight capture uses
+CUDA profiler API and CUDA Graph node tracing.
+
+Step diagnostics are opt-in through `W4A16_STEP_DIAGNOSTICS`; ordinary
+serving benchmarks do not record these extra events. `wrapped` is a diagnostic
+worker mode that retains dispatch checks while always calling Humming.
+Instrumented serving numbers should not replace the ordinary benchmark.
+
 The [checked-in measurement archive](results/README.md) contains current
 latency tables, fixed configurations, correctness records and plots, including
 the optimized QKV crossover at M=49 and the existing O/gate-up/down boundaries.
+
+## Modifying Humming's input staging
+
+`humming_direct.py` and its accompanying patch build an isolated copy of the
+pinned Humming package. On the SM86 FP16/INT4 group128 path, mode 1 sends
+packed weights directly to their consumer registers; mode 2 also loads
+activations and group scales directly and removes empty mainloop pipeline
+waits/refill barriers. Output reduction and epilogue shared memory remain.
+Compact stage fields retain one unused int4 anchor. The original package is
+not modified. The harness checks that the applied patch matches its source.
+
+```bash
+.venv/bin/python benchmarks/kernels/w4a16_gemv/humming_direct.py \
+  --source /path/to/pinned-humming-package \
+  --destination /tmp/humming-direct-package
+```
+
+Use `shared_layout_benchmark.py --humming-direct` with the copied
+`--humming-root` and the usual model/CUPTI/source arguments. Tune with
+`--phase tune`, then confirm with `--phase compare --selection ...`.
+Both original and modified paths sweep default/stage2/no-Stream-K configs.
+Confirmation retains matched original-config controls as well as the best
+configuration of each family. Registered kernel handles are fixed before
+timing, so changing the Python preparation mode cannot switch a timed kernel.
+
+Independent M=8 cold L2 confirmation on RTX 3060, in microseconds:
+
+| Projection | Our custom | Original Humming | Weight-direct Humming | All-input-direct Humming |
+| --- | --- | --- | --- | --- |
+| QKV | 9.22 | 9.68 | 11.53 | 9.92 |
+| O | 7.65 | 7.94 | 8.42 | 8.25 |
+| Gate/up | 50.42 | 53.33 | 56.50 | 53.68 |
+| Down | 28.16 | 28.41 | 31.69 | 28.71 |
+
+This rewrite does not yield a universal improvement. O benefits at some warm
+points: M=9 improves from 7.07 to 6.27 us, and M=16 from 7.21 to 6.53 us
+(essentially tied with our 6.54 us). Several large-M all-direct cases regress
+by over 20%. These are results of this rewrite, not a bound on future tuning.
+
+QKV M=8 SASS confirms identical static HMMA counts and removal of input
+LDGSTS/LDSM/DEPBAR instructions in all-direct mode. Nsight shows essentially
+unchanged DRAM bytes and achieved occupancy (16.65%) in the three Humming
+paths; all-direct increases registers/thread from 92 to 126. Global-memory
+dependency stalls increase in both direct variants. Freeing shared capacity
+alone does not increase the work available to run concurrently.
+
+44 shapes (four projections, M=1/2/4/8/9/16/17/32/48/49/64) use separately
+fixed configurations, CUPTI graph timing with two reverse-order 150-sample
+rounds, and cold/warm caches. All 880 selected-path reference checks passed
+the fixed tolerances. Local artifacts are under
+`/home/linxi/.local/state/vllm-qwen-int4/gemv-experiment/`:
+`humming-direct-tune/`, `humming-direct-compare/` and `humming-direct-profile/`.
+They include raw samples, matched-config comparisons, source snapshots,
+correctness records, SASS and Nsight exports. Profile latency is not used
+as benchmark latency.
 
 The current target is to beat tuned Humming at M=1/2/4/8 on all four
 projections under both cache conditions, while sharing Humming's single
