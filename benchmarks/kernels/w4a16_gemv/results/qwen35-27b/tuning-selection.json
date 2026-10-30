@@ -1,0 +1,162 @@
+{
+  "qwen35_27b_gate_up/M1/none/cold": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_gate_up/M1/none/warm": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_gate_up/M8/none/cold": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_gate_up/M8/none/warm": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_gate_up/M32/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_gate_up/M32/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_gate_up/M64/none/cold": {
+    "custom": "wide_r4_t4_k1_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_gate_up/M64/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_down/M1/none/cold": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_down/M1/none/warm": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_down/M8/none/cold": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_down/M8/none/warm": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_down/M32/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_down/M32/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_down/M64/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_down/M64/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_qkv_gate/M1/none/cold": {
+    "custom": "sharedv_t2_n1_k16_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_qkv_gate/M1/none/warm": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_qkv_gate/M8/none/cold": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_qkv_gate/M8/none/warm": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_qkv_gate/M32/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_qkv_gate/M32/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_qkv_gate/M64/none/cold": {
+    "custom": "wide_r8_t4_k1_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_qkv_gate/M64/none/warm": {
+    "custom": "wide_r8_t4_k1_s2",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_linear_qkvz/M1/none/cold": {
+    "custom": "sharedv_t2_n1_k16_c0_rows",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_linear_qkvz/M1/none/warm": {
+    "custom": "shareds4_t2_n1_k16_c0_rows",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_linear_qkvz/M8/none/cold": {
+    "custom": "wide_r2_t4_k2_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_linear_qkvz/M8/none/warm": {
+    "custom": "wide_r2_t4_k2_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_linear_qkvz/M32/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_stages2"
+  },
+  "qwen35_27b_linear_qkvz/M32/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_stages2"
+  },
+  "qwen35_27b_linear_qkvz/M64/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_linear_qkvz/M64/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_out/M1/none/cold": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_out/M1/none/warm": {
+    "custom": "shareds4_t2_n2_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_out/M8/none/cold": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_out/M8/none/warm": {
+    "custom": "shareds4_t2_n1_k8_c0_rows",
+    "humming": "humming_no_streamk"
+  },
+  "qwen35_27b_out/M32/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_out/M32/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_out/M64/none/cold": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  },
+  "qwen35_27b_out/M64/none/warm": {
+    "custom": "wide_r4_t4_k4_s2",
+    "humming": "humming_default"
+  }
+}

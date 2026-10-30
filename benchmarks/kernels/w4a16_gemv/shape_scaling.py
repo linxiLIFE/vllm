@@ -29,6 +29,11 @@ SHAPES = {
     "qwen_o": (1536, 1536),
     "qwen_gate_up": (1536, 17920),
     "qwen_down": (8960, 1536),
+    "qwen35_27b_gate_up": (5120, 34816),
+    "qwen35_27b_down": (17408, 5120),
+    "qwen35_27b_qkv_gate": (5120, 14336),
+    "qwen35_27b_linear_qkvz": (5120, 16384),
+    "qwen35_27b_out": (6144, 5120),
     "v41_q_a": (5120, 1280),
     "v41_q_b": (1280, 32768),
     "v41_kv": (5120, 512),
@@ -221,10 +226,19 @@ def main(args):
         "humming_commit": subprocess.check_output(
             ["git", "-C", str(args.humming_root), "rev-parse", "HEAD"], text=True
         ).strip(),
-        "shapes": SHAPES,
-        "shape_source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/"
-        f"blob/{MODEL_REVISION}/inference/model.py",
-        "shape_revision": MODEL_REVISION,
+        "shapes": {name: SHAPES[name] for name in args.shapes},
+        "shape_sources": {
+            name: (
+                "https://huggingface.co/Qwen/Qwen3.5-27B/blob/main/config.json"
+                if name.startswith("qwen35_27b_")
+                else "https://huggingface.co/Qwen/"
+                "Qwen2.5-1.5B-Instruct-GPTQ-Int4/blob/main/config.json"
+                if name.startswith("qwen_")
+                else "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/"
+                f"blob/{MODEL_REVISION}/inference/model.py"
+            )
+            for name in args.shapes
+        },
         "seed": args.seed,
         "rounds": args.rounds,
         "repeats": args.repeats,
@@ -237,8 +251,8 @@ def main(args):
         "variants": args.variants or list((*VARIANTS, *WIDE_CONFIGS)),
         "timing": "CUPTI graph replay; cold flush excluded; reverse order rounds",
         "precision": "synthetic symmetric INT4 group128, FP16 dequant, FP32 accum",
-        "limitations": "TP1 individual GEMMs; no routing/communication/attention; "
-        "V4.1 native FP8/FP4 and bias-free projections not reproduced",
+        "limitations": "TP1 synthetic individual GEMMs; FP16 activations; "
+        "no routing/communication/attention or model accuracy evaluation",
         "source_sha256": {
             name: hashlib.sha256((source / name).read_bytes()).hexdigest()
             for name in source_files

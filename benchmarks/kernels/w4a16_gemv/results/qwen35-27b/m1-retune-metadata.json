@@ -1,0 +1,112 @@
+{
+  "command": [
+    "benchmarks/kernels/w4a16_gemv/shape_scaling.py",
+    "--humming-root",
+    "/home/linxi/.local/state/vllm-qwen-int4/humming-latest-src",
+    "--cupti-root",
+    "/home/linxi/.local/state/vllm-qwen-int4/cupti-package",
+    "--output-dir",
+    "/home/linxi/.local/state/vllm-qwen-int4/gemv-experiment/qwen35-27b-m1-retune",
+    "--build-dir",
+    "/home/linxi/.local/state/vllm-qwen-int4/gemv-experiment/v41-opt-build",
+    "--shapes",
+    "qwen35_27b_gate_up",
+    "qwen35_27b_down",
+    "qwen35_27b_qkv_gate",
+    "qwen35_27b_linear_qkvz",
+    "qwen35_27b_out",
+    "--batches",
+    "1",
+    "--bias-modes",
+    "none",
+    "--rounds",
+    "2",
+    "--repeats",
+    "40",
+    "--warmup-ms",
+    "50",
+    "--variants",
+    "shareds4_t2_n1_k8_c0_rows",
+    "shareds4_t2_n1_k16_c0_rows",
+    "shareds4_t2_n2_k8_c0_rows",
+    "sharedv_t2_n1_k16_c0_rows",
+    "reuse2_t2_k4_s4",
+    "wide_r2_t4_k1_s2",
+    "wide_r2_t4_k2_s2",
+    "wide_r4_t4_k1_s2",
+    "wide_r4_t4_k2_s2",
+    "wide_r4_t4_k4_s2",
+    "wide_r8_t4_k1_s2",
+    "wide_r8_t4_k2_s2",
+    "wide_r8_t2_k2_s2"
+  ],
+  "gpu": "NVIDIA GeForce RTX 3060",
+  "torch": "2.13.0+cu132",
+  "cuda": "13.2",
+  "vllm_commit": "a3c0f80c7dadb547de27a669662aee8e6abb245b",
+  "humming_commit": "81402fe03040e1233afeea88f3420db7ba01302d",
+  "shapes": {
+    "qwen35_27b_gate_up": [
+      5120,
+      34816
+    ],
+    "qwen35_27b_down": [
+      17408,
+      5120
+    ],
+    "qwen35_27b_qkv_gate": [
+      5120,
+      14336
+    ],
+    "qwen35_27b_linear_qkvz": [
+      5120,
+      16384
+    ],
+    "qwen35_27b_out": [
+      6144,
+      5120
+    ]
+  },
+  "shape_sources": {
+    "qwen35_27b_gate_up": "https://huggingface.co/Qwen/Qwen3.5-27B/blob/main/config.json",
+    "qwen35_27b_down": "https://huggingface.co/Qwen/Qwen3.5-27B/blob/main/config.json",
+    "qwen35_27b_qkv_gate": "https://huggingface.co/Qwen/Qwen3.5-27B/blob/main/config.json",
+    "qwen35_27b_linear_qkvz": "https://huggingface.co/Qwen/Qwen3.5-27B/blob/main/config.json",
+    "qwen35_27b_out": "https://huggingface.co/Qwen/Qwen3.5-27B/blob/main/config.json"
+  },
+  "seed": 0,
+  "rounds": 2,
+  "repeats": 40,
+  "warmup_ms": 50,
+  "cupti_version": "13.4.0",
+  "selection_source": null,
+  "previous_selection_source": null,
+  "variants": [
+    "shareds4_t2_n1_k8_c0_rows",
+    "shareds4_t2_n1_k16_c0_rows",
+    "shareds4_t2_n2_k8_c0_rows",
+    "sharedv_t2_n1_k16_c0_rows",
+    "reuse2_t2_k4_s4",
+    "wide_r2_t4_k1_s2",
+    "wide_r2_t4_k2_s2",
+    "wide_r4_t4_k1_s2",
+    "wide_r4_t4_k2_s2",
+    "wide_r4_t4_k4_s2",
+    "wide_r8_t4_k1_s2",
+    "wide_r8_t4_k2_s2",
+    "wide_r8_t2_k2_s2"
+  ],
+  "timing": "CUPTI graph replay; cold flush excluded; reverse order rounds",
+  "precision": "synthetic symmetric INT4 group128, FP16 dequant, FP32 accum",
+  "limitations": "TP1 synthetic individual GEMMs; FP16 activations; no routing/communication/attention or model accuracy evaluation",
+  "source_sha256": {
+    "shape_scaling.py": "0021b1fec1ec8a5c787c0aa9e9132524a7f07136f876ed71a74456d638ae70ee",
+    "model_dispatch.cu": "68b4ed7bd4433fac54a43b3e0c6a7e7f30412065bfbe8d554d0d79f6aac26384",
+    "shared_layout.cu": "cf8c295096acb4beaa2ff4c07be826ee0ea11f790202bdc95f2de67753c832d5",
+    "shared_layout_benchmark.py": "3f2697b8d6145a43a6218928e4750fa03711a3ae72849764b01a8b1958f6ed7f",
+    "batch_benchmark.py": "afd0ed8c4c02a26e72118ed128d7f23e59277159fa77afdc0a2a071233ddc555",
+    "benchmark.py": "ecdb18e29444f6a15e778a6c3506e5c786f85e5c59126da53f58364939f7111b",
+    "wide_gemm.cu": "d41a5a7e6ff67b6af3ae793da74d14447c5675642e1d46d151f73c91fdb4c805",
+    "CMakeLists.txt": "40b726d57b51187e4d52779b29acf12eefb2a5a6e7381bb25c35ff54a5e979c7"
+  }
+}
