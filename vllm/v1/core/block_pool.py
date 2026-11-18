@@ -171,6 +171,9 @@ class BlockPool:
         # Callbacks for blocks released with ``unpin_blocks`` whose contents
         # are still being read until the pool reuses them.
         self._reuse_watchers: dict[int, Callable[[KVCacheBlock], None]] = {}
+        from vllm.v1.core._cache_probe import CacheProbe  # TEMP probe
+
+        self._probe = CacheProbe.maybe_create(self)
 
     def get_cached_block(
         self, block_hash: BlockHash, kv_cache_group_ids: list[int]
@@ -238,6 +241,8 @@ class BlockPool:
         if num_cached_blocks >= num_full_blocks:
             return
         new_full_blocks = blocks[num_cached_blocks:num_full_blocks]
+        if self._probe:
+            self._probe.on_request(request)
         assert block_mask is None or len(block_mask) == len(new_full_blocks)
         block_hashes = resolve_block_hashes(
             request.block_hashes, self.hash_block_size, block_size
@@ -504,6 +509,8 @@ class BlockPool:
             return None
 
         assert block_size % self.hash_block_size == 0
+        if self._probe:
+            self._probe.on_request(request)
         block_hash = self._get_partial_block_hash(request, num_tokens)
         num_hash_blocks = num_tokens // self.hash_block_size
         block_hash_with_group_id = make_block_hash_with_group_id(
@@ -620,6 +627,8 @@ class BlockPool:
                 is not None
             ):
                 removed_hashes.append(block_hash)
+                if self._probe:
+                    self._probe.on_remove(block_hash, block)
         block.reset_hash()
         return removed_hashes
 
@@ -659,6 +668,12 @@ class BlockPool:
                 block_hash_with_group_id
             )
         self.cached_block_hash_to_block.insert(block_hash_with_group_id, block)
+        if self._probe:
+            self._probe.on_insert(
+                block_hash_with_group_id,
+                partial=num_tokens is not None
+                and num_tokens % self._probe.block_size != 0,
+            )
 
     def move_block_hashes(
         self,
@@ -690,6 +705,8 @@ class BlockPool:
             A list of new block.
 
         """
+        if self._probe:
+            self._probe.maybe_snapshot()
         if num_blocks > self.get_num_free_blocks():
             raise ValueError(f"Cannot get {num_blocks} free blocks from the pool")
 
@@ -763,7 +780,12 @@ class BlockPool:
         if self.metrics_collector:
             self.metrics_collector.on_block_evicted(block)
 
+        if self._probe:
+            self._probe.evicting = True
         evicted_hashes = self._remove_cached_block_hashes(block)
+        if self._probe:
+            self._probe.evicting = False
+            self._probe.on_evict_done(block)
         if not evicted_hashes:
             # The block doesn't have hash, eviction is not needed
             return False
@@ -788,6 +810,8 @@ class BlockPool:
             if block.ref_cnt == 0:
                 self.free_block_queue.remove(block)
             block.ref_cnt += 1
+            if self._probe:
+                self._probe.on_hit(block)
             if self.metrics_collector:
                 self.metrics_collector.on_block_accessed(block)
 
@@ -823,7 +847,16 @@ class BlockPool:
                 continue
             block.ref_cnt -= 1
             if block.ref_cnt == 0:
-                if block.block_hash is None or not self.enable_caching or evict_first:
+                if (
+                    block.block_hash is None
+                    or not self.enable_caching
+                    or evict_first
+                    or (
+                        self._probe is not None
+                        and self._probe.evict_superseded
+                        and self._probe.is_superseded(block)
+                    )
+                ):
                     # LIFO reuse of non-cached blocks for better GPU locality,
                     # and of cached ones when asked to evict them first.
                     blocks_to_evict_first.append(block)

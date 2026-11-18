@@ -128,6 +128,14 @@ class KVCacheCoordinator(ABC):
             metrics_collector=metrics_collector,
             num_hash_lookahead_tokens=num_hash_lookahead_tokens,
         )
+        if self.block_pool._probe:  # TEMP probe
+            from vllm.v1.core.kv_cache_utils import is_mamba_group
+
+            groups = kv_cache_config.kv_cache_groups
+            self.block_pool._probe.mamba_groups = {
+                i for i, g in enumerate(groups) if is_mamba_group(g)
+            }
+            self.block_pool._probe.block_size = scheduler_block_size
 
         # KV cache group indices that get the EAGLE last-block drop.
         self.eagle_group_ids: set[int] = {

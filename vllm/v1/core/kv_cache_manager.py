@@ -344,6 +344,11 @@ class KVCacheManager:
         shared_prefix_boundary = (
             num_new_computed_tokens + num_uncached if num_uncached else 0
         )
+        probe = getattr(self.coordinator.block_pool, "_probe", None)  # TEMP probe
+        if probe is not None:
+            probe.on_lookup(
+                request, max_cache_hit_length, num_new_computed_tokens, num_uncached
+            )
 
         blocks = self.create_kv_cache_blocks(computed_blocks)
         return blocks, num_new_computed_tokens, shared_prefix_boundary
