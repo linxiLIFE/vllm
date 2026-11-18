@@ -1,7 +1,7 @@
 {
     "filetype": "generate_conversations",
     "num_conversations": 24,
-    "text_files": ["/home/linxi/study/data/pg1184.txt"],
+    "text_files": ["@DATA@/pg1184.txt"],
     "print_stats": false,
     "prompt_input": {
         "num_turns": {

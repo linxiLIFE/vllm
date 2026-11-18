@@ -6,7 +6,7 @@
 # Do not edit vllm/ while this runs.
 S=$(dirname "$(readlink -f "$0")")
 P=$S/../patches
-cd /home/linxi/study/vllm
+cd "$S/../../.."
 BOTH="--kv-cache-dtype fp8 --mamba-ssm-cache-dtype bfloat16"
 TAG=n8_main_both EXTRA="$BOTH" "$S/cc_run.sh" --sessions 8 --max-req 40
 git apply "$P/pr61282_rebased_ported.diff" && echo "[apply 61282] ok" || { echo "[apply 61282] FAILED"; exit 1; }

@@ -15,17 +15,24 @@ results/
 
 数据放在仓库外：
 
-- `/home/linxi/study/data/cc-traces-weka-062126/traces.jsonl`：Claude Code trace（1.8 GB）。
+- `$DATA/cc-traces-weka-062126/traces.jsonl`（`DATA` 默认 `~/study/data`）：Claude Code trace（1.8 GB）。
   重新下载：`.venv/bin/hf download semianalysisai/cc-traces-weka-062126 --repo-type dataset --local-dir <dir>`
-- `/home/linxi/study/data/pg1184.txt`：合成负载用的文本（Gutenberg《基督山伯爵》）。
+- `$DATA/pg1184.txt`：合成负载用的文本（Gutenberg《基督山伯爵》）。
 
 ## 环境
+
+以下结果（截至 2026-11-17）都在第一台机器上测得：
 
 - 3060 12 GB（SM86），WSL2；`.venv` 为 vLLM `4dd68d139` 预编译版，torch 2.14.0+cu132。
 - 模型 `Qwen/Qwen3.5-0.8B`（已在 HF 缓存中）。24 层 = 18 层 GDN + 6 层 Attention，
   分成 4 个 KV cache 组（1 个 Attention 组 + 3 个 GDN 组）。
 - 默认配置下：前缀缓存开启，GDN 自动 `align` 模式（`--mamba-cache-mode` 已弃用），
   Attention 块被放大到 **576 token** 以对齐 GDN 状态页（约 1.04 MiB/层）。
+
+- 2026-11-18 起迁移到共享服务器（A6000 48 GB / 3090 24 GB，均为 SM86，驱动只支持到 CUDA 12.6）：
+  `4dd68d139` 只有 cu132 预编译包，所以改为源码编译（torch 2.14.0+cu126、CUDA 12.6 工具链、GCC 13）。
+  共享机器上要设 `CUDA_DEVICE_ORDER=PCI_BUS_ID`（否则 `CUDA_VISIBLE_DEVICES` 和 nvidia-smi 的编号对不上），
+  端口用 `PORT` 避开别人的服务，`--gpu-memory-utilization` 要小于别人留下的空闲显存。
 
 ### 启动服务的坑
 
@@ -59,11 +66,11 @@ PROBE=1 DEMOTE=1 TAG=_demote tools/sweep.sh 100
 # 真实 trace：闭环回放（结果写到 results/cctrace/）
 TAG=n8 tools/cc_run.sh --sessions 8 --max-req 40
 TAG=n8_cap4 EXTRA="--max-num-active-seqs 4" tools/cc_run.sh --sessions 8 --max-req 40
-.venv/bin/python -I tools/cc_analyze.py /home/linxi/study/data/cc-traces-weka-062126/traces.jsonl results/cctrace/res_cc_n8.json
+.venv/bin/python -I tools/cc_analyze.py ~/study/data/cc-traces-weka-062126/traces.jsonl results/cctrace/res_cc_n8.json
 .venv/bin/python -I tools/probe_report.py results/cctrace cc_n4 cc_n8
 ```
 
-命令都在仓库根目录 `/home/linxi/study/vllm` 下运行。一次 8 会话回放约 50 分钟，
+命令都在仓库根目录下运行；脚本自己定位仓库根目录，可用 `PORT`、`DATA`、`TRACES`、`OUT`、`GPU_UTIL` 覆盖默认值。一次 8 会话回放约 50 分钟，
 超过工具的 1 小时超时时用 `setsid nohup ... &` 脱离终端运行（参考 `tools/cc_caps.sh`）。
 
 `cc_replay.py` 的回放方式：每个 64 token 哈希块固定映射到一段随机 token，保留前缀复用结构；
