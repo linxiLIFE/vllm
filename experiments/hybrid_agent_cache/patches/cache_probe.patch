@@ -1,0 +1,295 @@
+diff --git a/vllm/v1/core/_cache_probe.py b/vllm/v1/core/_cache_probe.py
+new file mode 100644
+index 0000000000..978c60e401
+--- /dev/null
++++ b/vllm/v1/core/_cache_probe.py
+@@ -0,0 +1,151 @@
++# SPDX-License-Identifier: Apache-2.0
++# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
++"""TEMPORARY instrumentation: classify prefix-cache contents of hybrid models.
++
++Enabled only when VLLM_CACHE_PROBE=<output .jsonl path>. A Mamba checkpoint
++is "superseded" when the same group also caches a checkpoint for a strictly
++longer prefix of it: a linear conversation can then never resume from it.
++"""
++
++import json
++import os
++import time
++from collections import Counter
++
++from vllm.v1.core.kv_cache_utils import get_block_hash, get_group_id
++
++
++class CacheProbe:
++    @classmethod
++    def maybe_create(cls, pool) -> "CacheProbe | None":
++        path = os.environ.get("VLLM_CACHE_PROBE")
++        return cls(pool, path) if path else None
++
++    def __init__(self, pool, path: str):
++        self.pool = pool
++        self.out = open(path, "w", buffering=1)
++        self.mamba_groups: set[int] = set()
++        self.parent: dict[bytes, bytes | None] = {}
++        self.req_done: dict[str, int] = {}
++        self.desc: Counter = Counter()
++        self.bumped: dict[bytes, list[bytes]] = {}
++        self.birth: dict[bytes, float] = {}
++        self.hits: Counter = Counter()
++        self.evicting = False
++        self.c: Counter = Counter()
++        self.last_snap = 0.0
++        self.t0 = time.monotonic()
++        self.block_size = pool.hash_block_size
++        # Counterfactual: move superseded Mamba checkpoints to the eviction front.
++        self.evict_superseded = (
++            os.environ.get("VLLM_CACHE_PROBE_EVICT_SUPERSEDED") == "1"
++        )
++
++    def kind(self, key: bytes) -> str:
++        return "mamba" if get_group_id(key) in self.mamba_groups else "attn"
++
++    def is_superseded(self, block) -> bool:
++        if block.block_hash is None or self.kind(block.block_hash) != "mamba":
++            return False
++        extra = self.pool.cached_block_hashes_by_block.get(block.block_id, ())
++        return all(self.desc.get(k) for k in (block.block_hash, *extra))
++
++    def _demote(self, akey: bytes) -> None:
++        block_id = self.pool.cached_block_hash_to_block._cache.get(akey)
++        if block_id is None:
++            return
++        block = self.pool.blocks[block_id]
++        if block.ref_cnt == 0 and self.is_superseded(block):
++            self.pool.free_block_queue.remove(block)
++            self.pool.free_block_queue.prepend_n([block])
++            self.c["demote_superseded"] += 1
++
++    def on_request(self, request) -> None:
++        hashes = request.block_hashes
++        start = self.req_done.get(request.request_id, 0)
++        for i in range(start, len(hashes)):
++            self.parent.setdefault(hashes[i], hashes[i - 1] if i else None)
++        self.req_done[request.request_id] = len(hashes)
++
++    def on_insert(self, key: bytes, partial: bool) -> None:
++        kind = self.kind(key)
++        self.c[f"insert_{kind}{'_partial' if partial else ''}"] += 1
++        self.birth[key] = time.monotonic()
++        if kind != "mamba":
++            return
++        suffix = key[-4:]
++        cache = self.pool.cached_block_hash_to_block._cache
++        bumped = []
++        h = self.parent.get(get_block_hash(key))
++        while h is not None:
++            akey = h + suffix
++            if akey in cache:
++                self.desc[akey] += 1
++                bumped.append(akey)
++            h = self.parent.get(h)
++        if bumped:
++            self.bumped[key] = bumped
++            if self.evict_superseded:
++                for akey in bumped:
++                    self._demote(akey)
++
++    def on_remove(self, key: bytes, block) -> None:
++        for akey in self.bumped.pop(key, ()):
++            self.desc[akey] -= 1
++            if self.desc[akey] <= 0:
++                del self.desc[akey]
++        born = self.birth.pop(key, None)
++        superseded = self.desc.pop(key, 0) > 0
++        if not self.evicting:
++            self.c["remove_noevict"] += 1
++            return
++        kind = self.kind(key)
++        state = ("superseded" if superseded else "live") if kind == "mamba" else "attn"
++        hit = "hit" if self.hits[block.block_id] else "nohit"
++        self.c[f"evict_{state}_{hit}"] += 1
++        if born is not None:
++            self.c[f"evict_{state}_age_ms_sum"] += int((time.monotonic() - born) * 1e3)
++
++    def on_evict_done(self, block) -> None:
++        self.hits.pop(block.block_id, None)
++
++    def on_hit(self, block) -> None:
++        if block.block_hash is not None:
++            self.hits[block.block_id] += 1
++            self.c[f"hit_{self.kind(block.block_hash)}"] += 1
++
++    def maybe_snapshot(self, force: bool = False) -> None:
++        now = time.monotonic()
++        if not force and now - self.last_snap < 0.25:
++            return
++        self.last_snap = now
++        snap: Counter = Counter()
++        extra = self.pool.cached_block_hashes_by_block
++        for b in self.pool.blocks:
++            if b.is_null:
++                continue
++            if b.block_hash is None:
++                snap["inuse_uncached" if b.ref_cnt else "free_uncached"] += 1
++                continue
++            kind = self.kind(b.block_hash)
++            if kind == "mamba":
++                keys = [b.block_hash, *extra.get(b.block_id, ())]
++                kind += "_superseded" if all(self.desc.get(k) for k in keys) else "_live"
++            snap[("inuse_" if b.ref_cnt else "free_") + kind] += 1
++        rec = {"t": round(now - self.t0, 3), "snap": snap, "cum": self.c}
++        self.out.write(json.dumps(rec) + "\n")
++
++    def on_lookup(self, request, max_len: int, hit: int, attn_extra: int) -> None:
++        """Per-lookup decomposition: attention-only hit = hit + attn_extra."""
++        if not hasattr(self, "lookup_out"):
++            self.lookup_out = open(self.out.name + ".lookups", "w", buffering=1)
++        rec = {
++            "t": round(time.monotonic() - self.t0, 3),
++            "rid": request.request_id,
++            "prompt": request.num_prompt_tokens,
++            "max": max_len,
++            "hit": hit,
++            "attn": hit + attn_extra,
++            "preempted": request.num_preemptions,
++        }
++        self.lookup_out.write(json.dumps(rec) + "\n")
+diff --git a/vllm/v1/core/block_pool.py b/vllm/v1/core/block_pool.py
+index d012297671..0427259bab 100644
+--- a/vllm/v1/core/block_pool.py
++++ b/vllm/v1/core/block_pool.py
+@@ -171,6 +171,9 @@ class BlockPool:
+         # Callbacks for blocks released with ``unpin_blocks`` whose contents
+         # are still being read until the pool reuses them.
+         self._reuse_watchers: dict[int, Callable[[KVCacheBlock], None]] = {}
++        from vllm.v1.core._cache_probe import CacheProbe  # TEMP probe
++
++        self._probe = CacheProbe.maybe_create(self)
+ 
+     def get_cached_block(
+         self, block_hash: BlockHash, kv_cache_group_ids: list[int]
+@@ -238,6 +241,8 @@ class BlockPool:
+         if num_cached_blocks >= num_full_blocks:
+             return
+         new_full_blocks = blocks[num_cached_blocks:num_full_blocks]
++        if self._probe:
++            self._probe.on_request(request)
+         assert block_mask is None or len(block_mask) == len(new_full_blocks)
+         block_hashes = resolve_block_hashes(
+             request.block_hashes, self.hash_block_size, block_size
+@@ -504,6 +509,8 @@ class BlockPool:
+             return None
+ 
+         assert block_size % self.hash_block_size == 0
++        if self._probe:
++            self._probe.on_request(request)
+         block_hash = self._get_partial_block_hash(request, num_tokens)
+         num_hash_blocks = num_tokens // self.hash_block_size
+         block_hash_with_group_id = make_block_hash_with_group_id(
+@@ -620,6 +627,8 @@ class BlockPool:
+                 is not None
+             ):
+                 removed_hashes.append(block_hash)
++                if self._probe:
++                    self._probe.on_remove(block_hash, block)
+         block.reset_hash()
+         return removed_hashes
+ 
+@@ -659,6 +668,12 @@ class BlockPool:
+                 block_hash_with_group_id
+             )
+         self.cached_block_hash_to_block.insert(block_hash_with_group_id, block)
++        if self._probe:
++            self._probe.on_insert(
++                block_hash_with_group_id,
++                partial=num_tokens is not None
++                and num_tokens % self._probe.block_size != 0,
++            )
+ 
+     def move_block_hashes(
+         self,
+@@ -690,6 +705,8 @@ class BlockPool:
+             A list of new block.
+ 
+         """
++        if self._probe:
++            self._probe.maybe_snapshot()
+         if num_blocks > self.get_num_free_blocks():
+             raise ValueError(f"Cannot get {num_blocks} free blocks from the pool")
+ 
+@@ -763,7 +780,12 @@ class BlockPool:
+         if self.metrics_collector:
+             self.metrics_collector.on_block_evicted(block)
+ 
++        if self._probe:
++            self._probe.evicting = True
+         evicted_hashes = self._remove_cached_block_hashes(block)
++        if self._probe:
++            self._probe.evicting = False
++            self._probe.on_evict_done(block)
+         if not evicted_hashes:
+             # The block doesn't have hash, eviction is not needed
+             return False
+@@ -788,6 +810,8 @@ class BlockPool:
+             if block.ref_cnt == 0:
+                 self.free_block_queue.remove(block)
+             block.ref_cnt += 1
++            if self._probe:
++                self._probe.on_hit(block)
+             if self.metrics_collector:
+                 self.metrics_collector.on_block_accessed(block)
+ 
+@@ -823,7 +847,16 @@ class BlockPool:
+                 continue
+             block.ref_cnt -= 1
+             if block.ref_cnt == 0:
+-                if block.block_hash is None or not self.enable_caching or evict_first:
++                if (
++                    block.block_hash is None
++                    or not self.enable_caching
++                    or evict_first
++                    or (
++                        self._probe is not None
++                        and self._probe.evict_superseded
++                        and self._probe.is_superseded(block)
++                    )
++                ):
+                     # LIFO reuse of non-cached blocks for better GPU locality,
+                     # and of cached ones when asked to evict them first.
+                     blocks_to_evict_first.append(block)
+diff --git a/vllm/v1/core/kv_cache_coordinator.py b/vllm/v1/core/kv_cache_coordinator.py
+index ccda263741..daf0f0056a 100644
+--- a/vllm/v1/core/kv_cache_coordinator.py
++++ b/vllm/v1/core/kv_cache_coordinator.py
+@@ -128,6 +128,14 @@ class KVCacheCoordinator(ABC):
+             metrics_collector=metrics_collector,
+             num_hash_lookahead_tokens=num_hash_lookahead_tokens,
+         )
++        if self.block_pool._probe:  # TEMP probe
++            from vllm.v1.core.kv_cache_utils import is_mamba_group
++
++            groups = kv_cache_config.kv_cache_groups
++            self.block_pool._probe.mamba_groups = {
++                i for i, g in enumerate(groups) if is_mamba_group(g)
++            }
++            self.block_pool._probe.block_size = scheduler_block_size
+ 
+         # KV cache group indices that get the EAGLE last-block drop.
+         self.eagle_group_ids: set[int] = {
+diff --git a/vllm/v1/core/kv_cache_manager.py b/vllm/v1/core/kv_cache_manager.py
+index 5e0060c78d..6fe6e31a8c 100644
+--- a/vllm/v1/core/kv_cache_manager.py
++++ b/vllm/v1/core/kv_cache_manager.py
+@@ -344,6 +344,11 @@ class KVCacheManager:
+         shared_prefix_boundary = (
+             num_new_computed_tokens + num_uncached if num_uncached else 0
+         )
++        probe = getattr(self.coordinator.block_pool, "_probe", None)  # TEMP probe
++        if probe is not None:
++            probe.on_lookup(
++                request, max_cache_hit_length, num_new_computed_tokens, num_uncached
++            )
+ 
+         blocks = self.create_kv_cache_blocks(computed_blocks)
+         return blocks, num_new_computed_tokens, shared_prefix_boundary
