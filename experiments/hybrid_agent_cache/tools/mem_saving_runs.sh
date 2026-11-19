@@ -14,7 +14,7 @@ declare -A FLAGS=(
   [both]="--kv-cache-dtype fp8 --mamba-ssm-cache-dtype bfloat16"
 )
 for cfg in base fp8kv bf16ssm both; do
-  .venv/bin/vllm serve Qwen/Qwen3.5-0.8B --port $PORT --max-model-len 8192 ${FLAGS[$cfg]} \
+  .venv/bin/vllm serve ${MODEL:-Qwen/Qwen3.5-0.8B} --port $PORT --max-model-len 8192 ${FLAGS[$cfg]} \
     > $O/serve_gsm8k_$cfg.log 2>&1 &
   pid=$!
   for i in $(seq 1 120); do curl -sf localhost:$PORT/health >/dev/null && break; kill -0 $pid 2>/dev/null || break; sleep 3; done

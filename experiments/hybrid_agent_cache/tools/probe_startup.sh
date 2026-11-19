@@ -7,7 +7,7 @@ PORT=${PORT:-8000}
 curl -s -o /dev/null localhost:$PORT && { echo "port $PORT already in use; set PORT"; exit 1; }
 L=$S/../results/cctrace/startup_$label.log
 cd "$S/../../.."
-.venv/bin/vllm serve Qwen/Qwen3.5-0.8B --port $PORT --max-model-len 131072 "$@" > "$L" 2>&1 &
+.venv/bin/vllm serve ${MODEL:-Qwen/Qwen3.5-0.8B} --port $PORT --max-model-len 131072 "$@" > "$L" 2>&1 &
 pid=$!
 for i in $(seq 1 120); do
   curl -sf localhost:$PORT/health >/dev/null && break
